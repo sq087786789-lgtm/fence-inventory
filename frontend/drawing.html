@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>圍籬工程圖 | Fence Drawing</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f5; padding: 20px; min-height: 100vh; }
+        .container { max-width: 1400px; margin: 0 auto; }
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 24px; border-radius: 16px; margin-bottom: 24px; text-align: center; }
+        .header h1 { font-size: 28px; margin-bottom: 8px; }
+        .header p { opacity: 0.9; }
+        .lang-switch { display: flex; justify-content: center; gap: 8px; margin-top: 16px; }
+        .lang-btn { padding: 8px 20px; border: 2px solid rgba(255,255,255,0.5); background: transparent; color: white; border-radius: 20px; font-size: 14px; cursor: pointer; transition: all 0.3s; }
+        .lang-btn.active { background: white; color: #667eea; border-color: white; }
+        .params-panel { background: white; border-radius: 16px; padding: 24px; margin-bottom: 24px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .params-title { font-size: 18px; font-weight: 600; color: #333; margin-bottom: 16px; }
+        .params-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
+        .param-item { background: #f8f9fa; padding: 12px 16px; border-radius: 8px; }
+        .param-label { font-size: 12px; color: #666; margin-bottom: 4px; }
+        .param-value { font-size: 16px; font-weight: 600; color: #333; }
+        .btn-group { display: flex; gap: 12px; margin-top: 20px; flex-wrap: wrap; }
+        .btn { padding: 14px 28px; font-size: 16px; font-weight: 600; border: none; border-radius: 12px; cursor: pointer; transition: all 0.3s; display: flex; align-items: center; gap: 8px; }
+        .btn-primary { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+        .btn-success { background: #11998e; color: white; }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
+        .drawing-section { background: white; border-radius: 16px; padding: 24px; margin-bottom: 24px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .drawing-title { font-size: 20px; font-weight: 600; color: #333; margin-bottom: 20px; display: flex; align-items: center; gap: 8px; }
+        .drawing-container { text-align: center; background: #fafafa; border-radius: 12px; padding: 20px; overflow-x: auto; }
+        .drawing-container svg, .drawing-container img { max-width: 100%; height: auto; }
+        .download-btn { background: #11998e; color: white; padding: 12px 24px; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; margin-top: 12px; }
+        .loading { color: #666; font-size: 18px; padding: 40px; text-align: center; }
+        @media (max-width: 768px) {
+            .header h1 { font-size: 22px; }
+            .params-grid { grid-template-columns: 1fr 1fr; }
+            .btn-group { flex-direction: column; }
+            .btn { width: 100%; justify-content: center; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔧 圍籬工程圖產生器</h1>
+            <p id="subtitle">Fence Engineering Drawing Generator</p>
+            <div class="lang-switch">
+                <button class="lang-btn active" data-lang="zh">中文</button>
+                <button class="lang-btn" data-lang="en">English</button>
+            </div>
+        </div>
+        
+        <div class="params-panel">
+            <div class="params-title">📋 <span id="params-title">輸入參數</span></div>
+            <div class="params-grid" id="params-grid"></div>
+            <div class="btn-group">
+                <button class="btn btn-success" id="btn-download-plan">⬇️ <span id="btn-download-plan-text">下載平面圖</span></button>
+                <button class="btn btn-success" id="btn-download-elevation">⬇️ <span id="btn-download-elevation-text">下載立面圖</span></button>
+            </div>
+        </div>
+        
+        <div class="drawing-section">
+            <div class="drawing-title">📐 <span id="plan-title">平面圖</span></div>
+            <div class="drawing-container" id="plan-container"><div class="loading">⏳ Loading...</div></div>
+        </div>
+        
+        <div class="drawing-section">
+            <div class="drawing-title">🏗️ <span id="elevation-title">立面圖</span></div>
+            <div class="drawing-container" id="elevation-container"><div class="loading">⏳ Loading...</div></div>
+        </div>
+    </div>
+    
+    <script>
+    const i18n = {
+        zh: {
+            subtitle: '圍籬工程圖產生器',
+            paramsTitle: '輸入參數',
+            planTitle: '平面圖',
+            elevationTitle: '立面圖',
+            btnDownloadPlan: '下載平面圖',
+            btnDownloadElevation: '下載立面圖',
+            labels: { top:'上邊(m)', bottom:'下邊(m)', left:'左邊(m)', right:'右邊(m)', spacing:'柱間距(m)', door_width:'門寬(m)', door_side:'門位置', door_open:'門開向', mesh:'菱形網', pipe:'亞管', pipe_len:'亞管長度(m)', soil:'植土(cm)', height:'圍籬高度(m)' }
+        },
+        en: {
+            subtitle: 'Fence Engineering Drawing Generator',
+            paramsTitle: 'Input Parameters',
+            planTitle: 'Plan View',
+            elevationTitle: 'Elevation View',
+            btnDownloadPlan: 'Download Plan',
+            btnDownloadElevation: 'Download Elevation',
+            labels: { top:'Top(m)', bottom:'Bottom(m)', left:'Left(m)', right:'Right(m)', spacing:'Spacing(m)', door_width:'Door Width(m)', door_side:'Gate Position', door_open:'Gate Swing', mesh:'Mesh', pipe:'Pipe', pipe_len:'Pipe Length(m)', soil:'Soil(cm)', height:'Height(m)' }
+        }
+    };
+    
+    let currentLang = 'zh';
+    let params = {};
+    
+    function getParams() {
+        const urlParams = new URLSearchParams(window.location.search);
+        params = {
+            top: parseFloat(urlParams.get('top')) || 0,
+            bottom: parseFloat(urlParams.get('bottom')) || 0,
+            left: parseFloat(urlParams.get('left')) || 0,
+            right: parseFloat(urlParams.get('right')) || 0,
+            spacing: parseFloat(urlParams.get('spacing')) || 2,
+            door_width: parseFloat(urlParams.get('door_width')) || 0,
+            door_side: urlParams.get('door_side') || '無',
+            door_open: urlParams.get('door_open') || '內開',
+            mesh: urlParams.get('mesh') || '2',
+            pipe: urlParams.get('pipe') || '2',
+            pipe_len: parseFloat(urlParams.get('pipe_len')) || 2,
+            soil: parseFloat(urlParams.get('soil')) || 50,
+            height: parseFloat(urlParams.get('height')) || 1.5
+        };
+    }
+    
+    function setLanguage(lang) {
+        currentLang = lang;
+        const t = i18n[lang];
+        document.getElementById('subtitle').textContent = t.subtitle;
+        document.getElementById('params-title').textContent = t.paramsTitle;
+        document.getElementById('plan-title').textContent = t.planTitle;
+        document.getElementById('elevation-title').textContent = t.elevationTitle;
+        document.getElementById('btn-download-plan-text').textContent = t.btnDownloadPlan;
+        document.getElementById('btn-download-elevation-text').textContent = t.btnDownloadElevation;
+        document.querySelectorAll('.lang-btn').forEach(b => b.classList.toggle('active', b.dataset.lang === lang));
+        updateParamsDisplay();
+        renderDrawings();
+    }
+    
+    function updateParamsDisplay() {
+        const t = i18n[currentLang].labels;
+        const grid = document.getElementById('params-grid');
+        let html = '';
+        for (const [key, label] of Object.entries(t)) {
+            let val = params[key];
+            if (['door_side', 'door_open'].includes(key)) val = val;
+            else if (['mesh', 'pipe'].includes(key)) val = val + '"';
+            else val = val + (key === 'soil' ? 'cm' : 'm');
+            html += `<div class="param-item"><div class="param-label">${label}</div><div class="param-value">${val}</div></div>`;
+        }
+        grid.innerHTML = html;
+    }
+    
+    function generatePlanSVG() {
+        const { top, left, right, bottom, spacing, door_width, door_side, door_open, mesh, pipe, pipe_len, soil, height } = params;
+        const col_top = top > 0 ? Math.ceil(top / spacing) : 0;
+        const col_left = Math.ceil(left / spacing);
+        const col_right = Math.ceil(right / spacing);
+        const col_bottom = bottom > 0 ? Math.ceil(bottom / spacing) : 0;
+        const total_cols = col_top + col_left + col_right + col_bottom;
+        const w = 1300, h = 700, fx = 80, fy = 200, fence_w = 620, fence_h = 340;
+        const doorSides = { '上': 'top', '左': 'left', '右': 'right', '下': 'bottom', '無': 'none' };
+        const ds = doorSides[door_side] || 'none';
+        const doorPos = { 'top': [fx + fence_w/2 - 50, fy], 'left': [fx, fy + fence_h/2 - 50], 'right': [fx + fence_w - 100, fy + fence_h/2 - 50], 'bottom': [fx + fence_w/2 - 50, fy + fence_h - 12], 'none': [0, 0] };
+        let svg = \`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 \${w} \${h}" width="\${w}" height="\${h}">\`;
+        svg += '<rect width="100%" height="100%" fill="#fafafa"/>';
+        svg += \`<text x="430" y="42" font-family="Arial" font-size="28" font-weight="bold" text-anchor="middle" fill="#2c3e50">\${currentLang === 'zh' ? '圍籬工程平面圖' : 'Fence Plan View'}</text>\`;
+        if (top > 0) svg += \`<line x1="\${fx}" y1="\${fy}" x2="\${fx + fence_w}" y2="\${fy}" stroke="#34495e" stroke-width="5"/>\`;
+        if (bottom > 0) svg += \`<line x1="\${fx}" y1="\${fy + fence_h}" x2="\${fx + fence_w}" y2="\${fy + fence_h}" stroke="#34495e" stroke-width="5"/>\`;
+        else svg += \`<line x1="\${fx}" y1="\${fy + fence_h}" x2="\${fx + fence_w}" y2="\${fy + fence_h}" stroke="#34495e" stroke-width="5" stroke-dasharray="10,5" opacity="0.5"/>\`;
+        if (left > 0) svg += \`<line x1="\${fx}" y1="\${fy}" x2="\${fx}" y2="\${fy + fence_h}" stroke="#34495e" stroke-width="5"/>\`;
+        if (right > 0) svg += \`<line x1="\${fx + fence_w}" y1="\${fy}" x2="\${fx + fence_w}" y2="\${fy + fence_h}" stroke="#34495e" stroke-width="5"/>\`;
+        const corners = [];
+        if (top > 0 && left > 0) corners.push([fx, fy]);
+        if (top > 0 && right > 0) corners.push([fx + fence_w, fy]);
+        if (bottom > 0 && left > 0) corners.push([fx, fy + fence_h]);
+        if (bottom > 0 && right > 0) corners.push([fx + fence_w, fy + fence_h]);
+        corners.forEach(([cx, cy]) => { svg += \`<circle cx="\${cx}" cy="\${cy}" r="10" fill="#3498db"/>\`; });
+        const visualDoorW = door_width > 0 ? 80 : 0;
+        if (ds !== 'none' && door_width > 0) {
+            const [dx, dy] = doorPos[ds];
+            svg += \`<rect x="\${dx}" y="\${dy}" width="\${visualDoorW}" height="12" fill="none" stroke="#e74c3c" stroke-width="2.5" stroke-dasharray="6,4"/>\`;
+            svg += \`<text x="\${dx + visualDoorW/2}" y="\${dy + 30}" font-family="Arial" font-size="15" text-anchor="middle" fill="#e74c3c" font-weight="bold">\${currentLang === 'zh' ? '門' : 'Gate'}</text>\`;
+            svg += \`<text x="\${dx + visualDoorW/2}" y="\${dy + 48}" font-family="Arial" font-size="12" text-anchor="middle" fill="#e74c3c">(\${door_open})</text>\`;
+            svg += \`<line x1="\${dx}" y1="\${dy - 20}" x2="\${dx + visualDoorW}" y2="\${dy - 20}" stroke="#e74c3c" stroke-width="1.5"/>\`;
+            svg += \`<text x="\${dx + visualDoorW/2}" y="\${dy - 25}" font-family="Arial" font-size="13" text-anchor="middle" fill="#e74c3c">\${door_width}m</text>\`;
+        } else if (ds === 'none' || door_width === 0) {
+            svg += \`<text x="\${fx + fence_w/2}" y="\${fy + fence_h/2}" font-family="Arial" font-size="16" text-anchor="middle" fill="#95a5a6">\${currentLang === 'zh' ? '無門' : 'No Gate'}</text>\`;
+        }
+        if (top > 0) {
+            svg += \`<line x1="\${fx}" y1="\${fy - 50}" x2="\${fx + fence_w}" y2="\${fy - 50}" stroke="#95a5a6" stroke-width="1.5"/>\`;
+            svg += \`<text x="\${fx + fence_w/2}" y="\${fy - 64}" font-family="Arial" font-size="16" text-anchor="middle" fill="#7f8c8d">\${currentLang === 'zh' ? 'A(上)' : 'A(Top)'} = \${top}m</text>\`;
+            svg += \`<text x="\${fx + fence_w/2}" y="\${fy + fence_h + 50}" font-family="Arial" font-size="13" text-anchor="middle" fill="#f39c12" font-weight="bold">\${currentLang === 'zh' ? '柱子:' : 'Posts: '}\${col_top}\${currentLang === 'zh' ? '支' : ''}</text>\`;
+        }
+        if (left > 0) {
+            svg += \`<line x1="\${fx - 50}" y1="\${fy}" x2="\${fx - 50}" y2="\${fy + fence_h}" stroke="#95a5a6" stroke-width="1.5"/>\`;
+            svg += \`<text x="\${fx - 68}" y="\${fy + fence_h/2}" font-family="Arial" font-size="16" text-anchor="middle" fill="#7f8c8d" transform="rotate(-90,\${fx - 68},\${fy + fence_h/2})">\${currentLang === 'zh' ? 'B(左)' : 'B(Left)'} = \${left}m</text>\`;
+            svg += \`<text x="\${fx + 40}" y="\${fy + fence_h/2 + 5}" font-family="Arial" font-size="13" text-anchor="middle" fill="#f39c12" font-weight="bold">\${currentLang === 'zh' ? '柱子:' : 'Posts: '}\${col_left}\${currentLang === 'zh' ? '支' : ''}</text>\`;
+        }
+        if (right > 0) {
+            svg += \`<line x1="\${fx + fence_w + 50}" y1="\${fy}" x2="\${fx + fence_w + 50}" y2="\${fy + fence_h}" stroke="#95a5a6" stroke-width="1.5"/>\`;
+            svg += \`<text x="\${fx + fence_w + 68}" y="\${fy + fence_h/2}" font-family="Arial" font-size="16" text-anchor="middle" fill="#7f8c8d" transform="rotate(90,\${fx + fence_w + 68},\${fy + fence_h/2})">\${currentLang === 'zh' ? 'C(右)' : 'C(Right)'} = \${right}m</text>\`;
+            svg += \`<text x="\${fx + fence_w - 40}" y="\${fy + fence_h/2 + 5}" font-family="Arial" font-size="13" text-anchor="middle" fill="#f39c12" font-weight="bold">\${currentLang === 'zh' ? '柱子:' : 'Posts: '}\${col_right}\${currentLang === 'zh' ? '支' : ''}</text>\`;
+        }
+        if (bottom > 0) {
+            svg += \`<line x1="\${fx}" y1="\${fy + fence_h + 50}" x2="\${fx + fence_w}" y2="\${fy + fence_h + 50}" stroke="#95a5a6" stroke-width="1.5"/>\`;
+            svg += \`<text x="\${fx + fence_w/2}" y="\${fy + fence_h + 65}" font-family="Arial" font-size="16" text-anchor="middle" fill="#7f8c8d">\${currentLang === 'zh' ? 'D(下)' : 'D(Bottom)'} = \${bottom}m</text>\`;
+            svg += \`<text x="\${fx + fence_w/2}" y="\${fy + fence_h + 80}" font-family="Arial" font-size="13" text-anchor="middle" fill="#f39c12" font-weight="bold">\${currentLang === 'zh' ? '柱子:' : 'Posts: '}\${col_bottom}\${currentLang === 'zh' ? '支' : ''}</text>\`;
+        }
+        const panel_x = 820;
+        const perimeter = top + left + right + bottom;
+        svg += \`<rect x="\${panel_x}" y="70" width="420" height="130" fill="#e8f6f3" stroke="#1abc9c" stroke-width="2" rx="10"/>\`;
+        svg += \`<text x="\${panel_x + 30}" y="105" font-family="Arial" font-size="22" font-weight="bold" fill="#16a085">\${currentLang === 'zh' ? '數量統計' : 'Quantity'}</text>\`;
+        svg += \`<line x1="\${panel_x + 30}" y1="120" x2="\${panel_x + 410}" y2="120" stroke="#1abc9c" stroke-width="1"/>\`;
+        svg += \`<text x="\${panel_x + 50}" y="158" font-family="Arial" font-size="16" fill="#7f8c8d">\${currentLang === 'zh' ? '總周長' : 'Perimeter'}</text>\`;
+        svg += \`<text x="\${panel_x + 300}" y="158" font-family="Arial" font-size="17" font-weight="bold" fill="#27ae60">\${perimeter}m</text>\`;
+        svg += \`<text x="\${panel_x + 50}" y="188" font-family="Arial" font-size="16" fill="#7f8c8d">\${currentLang === 'zh' ? '柱子總數' : 'Total Posts'}</text>\`;
+        svg += \`<text x="\${panel_x + 300}" y="188" font-family="Arial" font-size="17" font-weight="bold" fill="#e74c3c">\${total_cols}\${currentLang === 'zh' ? '支' : ''}</text>\`;
+        svg += \`<rect x="\${panel_x}" y="220" width="420" height="290" fill="#fef9e7" stroke="#f39c12" stroke-width="2" rx="10"/>\`;
+        svg += \`<text x="\${panel_x + 30}" y="255" font-family="Arial" font-size="22" font-weight="bold" fill="#d68910">\${currentLang === 'zh' ? '規格說明' : 'Specifications'}</text>\`;
+        svg += \`<line x1="\${panel_x + 30}" y1="270" x2="\${panel_x + 410}" y2="270" stroke="#f39c12" stroke-width="1"/>\`;
+        svg += \`<text x="\${panel_x + 50}" y="308" font-family="Arial" font-size="16" fill="#7f8c8d">\${currentLang === 'zh' ? '網目規格' : 'Mesh'}</text>\`;
+        svg += \`<text x="\${panel_x + 200}" y="308" font-family="Arial" font-size="17" font-weight="bold" fill="#2c3e50">\${mesh}" \${currentLang === 'zh' ? '菱形網' : 'Diamond Mesh'}</text>\`;
+        svg += \`<text x="\${panel_x + 50}" y="344" font-family="Arial" font-size="16" fill="#7f8c8d">\${currentLang === 'zh' ? '柱子規格' : 'Pipe'}</text>\`;
+        svg += \`<text x="\${panel_x + 200}" y="344" font-family="Arial" font-size="17" font-weight="bold" fill="#2c3e50">\${pipe}"x\${pipe_len}m</text>\`;
+        svg += \`<text x="\${panel_x + 50}" y="380" font-family="Arial" font-size="16" fill="#7f8c8d">\${currentLang === 'zh' ? '圍籬高度' : 'Height'}</text>\`;
+        svg += \`<text x="\${panel_x + 200}" y="380" font-family="Arial" font-size="17" font-weight="bold" fill="#2c3e50">\${height}m</text>\`;
+        svg += \`<text x="\${panel_x + 50}" y="416" font-family="Arial" font-size="16" fill="#7f8c8d">\${currentLang === 'zh' ? '植土深度' : 'Soil Depth'}</text>\`;
+        svg += \`<text x="\${panel_x + 200}" y="416" font-family="Arial" font-size="17" font-weight="bold" fill="#2c3e50">\${soil}cm</text>\`;
+        svg += \`<text x="\${panel_x + 50}" y="452" font-family="Arial" font-size="16" fill="#7f8c8d">\${currentLang === 'zh' ? '門規格' : 'Gate'}</text>\`;
+        if (ds !== 'none' && door_width > 0) svg += \`<text x="\${panel_x + 200}" y="452" font-family="Arial" font-size="17" font-weight="bold" fill="#2c3e50">\${door_width}m \${currentLang === 'zh' ? '單開' : 'Single'}</text>\`;
+        else svg += \`<text x="\${panel_x + 200}" y="452" font-family="Arial" font-size="17" font-weight="bold" fill="#2c3e50">\${currentLang === 'zh' ? '無' : 'None'}</text>\`;
+        svg += \`<text x="\${panel_x + 50}" y="488" font-family="Arial" font-size="16" fill="#7f8c8d">\${currentLang === 'zh' ? '門開向' : 'Swing'}</text>\`;
+        svg += \`<text x="\${panel_x + 200}" y="488" font-family="Arial" font-size="17" font-weight="bold" fill="#e74c3c">\${door_open}</text>\`;
+        svg += \`<rect x="\${panel_x}" y="530" width="420" height="100" fill="#ebf5fb" stroke="#3498db" stroke-width="2" rx="10"/>\`;
+        svg += \`<text x="\${panel_x + 30}" y="565" font-family="Arial" font-size="22" font-weight="bold" fill="#2980b9">\${currentLang === 'zh' ? '圖例' : 'Legend'}</text>\`;
+        svg += \`<line x1="\${panel_x + 30}" y1="580" x2="\${panel_x + 410}" y2="580" stroke="#3498db" stroke-width="1"/>\`;
+        svg += \`<circle cx="\${panel_x + 70}" cy="615" r="9" fill="#3498db"/>\`;
+        svg += \`<text x="\${panel_x + 95}" y="620" font-family="Arial" font-size="14" fill="#555">\${currentLang === 'zh' ? '角落柱' : 'Corner Post'}</text>\`;
+        svg += \`<circle cx="\${panel_x + 220}" cy="615" r="9" fill="#e74c3c"/>\`;
+        svg += \`<text x="\${panel_x + 245}" y="620" font-family="Arial" font-size="14" fill="#555">\${currentLang === 'zh' ? '門柱' : 'Gate Post'}</text>\`;
+        svg += '</svg>';
+        return svg;
+    }
+    
+    function generateElevationSVG() {
+        const { height, soil, pipe_len } = params;
+        const soil_m = soil / 100;
+        const pipe_above_soil = pipe_len - soil_m;
+        const post_x_positions = [100, 220, 340, 460, 580, 700];
+        const ground_y = 380, soil_height_px = 50, soil_top_y = ground_y - soil_height_px;
+        const ref_height = 1.5, ref_post_px = 200, pipe_above_soil_px = ref_post_px;
+        const mesh_height_px = Math.floor(ref_post_px * height / ref_height);
+        const post_top_y = soil_top_y - pipe_above_soil_px, post_height = pipe_above_soil_px + soil_height_px;
+        const mesh_top_y = soil_top_y - mesh_height_px;
+        const w = 1300, h = 650;
+        let svg = \`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 \${w} \${h}" width="\${w}" height="\${h}">\`;
+        svg += '<defs><pattern id="dm" patternUnits="userSpaceOnUse" width="20" height="20"><path d="M10 0 L20 10 L10 20 L0 10 Z" fill="none" stroke="#666" stroke-width="1"/></pattern></defs>';
+        svg += '<rect width="100%" height="100%" fill="#fafafa"/>';
+        svg += \`<text x="500" y="40" font-family="Arial" font-size="28" font-weight="bold" text-anchor="middle" fill="#2c3e50">\${currentLang === 'zh' ? '圍籬工程立面圖' : 'Fence Elevation View'}</text>\`;
+        svg += \`<line x1="50" y1="\${ground_y}" x2="\${w - 50}" y2="\${ground_y}" stroke="#8B4513" stroke-width="3"/>\`;
+        svg += \`<text x="60" y="\${ground_y - 10}" font-family="Arial" font-size="14" fill="#8B4513">\${currentLang === 'zh' ? '地面' : 'Ground'}</text>\`;
+        svg += \`<rect x="50" y="\${soil_top_y}" width="\${w - 100}" height="\${soil_height_px}" fill="#8B4513" opacity="0.3"/>\`;
+        svg += \`<line x1="50" y1="\${soil_top_y}" x2="\${w - 50}" y2="\${soil_top_y}" stroke="#8B4513" stroke-width="1.5" stroke-dasharray="5,5"/>\`;
+        svg += \`<text x="60" y="\${soil_top_y + 30}" font-family="Arial" font-size="13" fill="#8B4513">\${soil}cm \${currentLang === 'zh' ? '植土' : 'Soil'}</text>\`;
+        post_x_positions.forEach((px) => {
+            svg += \`<rect x="\${px}" y="\${post_top_y}" width="15" height="\${post_height}" fill="#3498db" rx="2"/>\`;
+        });
+        svg += \`<rect x="85" y="\${mesh_top_y}" width="630" height="\${mesh_height_px}" fill="url(#dm)" stroke="#666" stroke-width="1"/>\`;
+        svg += \`<line x1="85" y1="\${soil_top_y}" x2="715" y2="\${soil_top_y}" stroke="#e74c3c" stroke-width="2"/>\`;
+        svg += \`<text x="400" y="\${mesh_top_y - 15}" font-family="Arial" font-size="14" text-anchor="middle" fill="#e74c3c">\${height}m \${currentLang === 'zh' ? '菱形網' : 'Diamond Mesh'}</text>\`;
+        svg += \`<line x1="50" y1="\${post_top_y}" x2="\${w - 50}" y2="\${post_top_y}" stroke="#27ae60" stroke-width="1" stroke-dasharray="5,5"/>\`;
+        svg += \`<text x="60" y="\${post_top_y - 8}" font-family="Arial" font-size="13" fill="#27ae60">\${currentLang === 'zh' ? '亞管頂部' : 'Pipe Top'} (\${pipe_len - soil_m}m)</text>\`;
+        svg += \`<line x1="50" y1="\${soil_top_y}" x2="\${w - 50}" y2="\${soil_top_y}" stroke="#f39c12" stroke-width="1" stroke-dasharray="5,5"/>\`;
+        svg += \`<text x="60" y="\${soil_top_y - 8}" font-family="Arial" font-size="13" fill="#f39c12">\${currentLang === 'zh' ? '植土線' : 'Soil Line'}</text>\`;
+        svg += \`<text x="750" y="150" font-family="Arial" font-size="16" fill="#333">\${currentLang === 'zh' ? '柱子：6支（示意）' : 'Posts: 6 (example)'}</text>\`;
+        svg += \`<text x="750" y="180" font-family="Arial" font-size="16" fill="#333">\${currentLang === 'zh' ? '亞管：' : 'Pipe: '}\${params.pipe}" x \${pipe_len}m</text>\`;
+        svg += \`<text x="750" y="210" font-family="Arial" font-size="16" fill="#333">\${currentLang === 'zh' ? '圍籬高度：' : 'Height: '}\${height}m</text>\`;
+        svg += \`<text x="750" y="240" font-family="Arial" font-size="16" fill="#333">\${currentLang === 'zh' ? '植土深度：' : 'Soil Depth: '}\${soil}cm</text>\`;
+        svg += '</svg>';
+        return svg;
+    }
+    
+    function renderDrawings() {
+        document.getElementById('plan-container').innerHTML = generatePlanSVG();
+        document.getElementById('elevation-container').innerHTML = generateElevationSVG();
+    }
+    
+    function downloadSVG(svgContent, filename) {
+        const blob = new Blob([svgContent], { type: 'image/svg+xml';
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        a.click();
+        URL.revokeObjectURL(url);
+    }
+    
+    document.querySelectorAll('.lang-btn').forEach(btn => {
+        btn.addEventListener('click', () => setLanguage(btn.dataset.lang));
+    });
+    
+    document.getElementById('btn-download-plan').addEventListener('click', () => {
+        downloadSVG(generatePlanSVG(), 'fence-plan.svg');
+    });
+    
+    document.getElementById('btn-download-elevation').addEventListener('click', () => {
+        downloadSVG(generateElevationSVG(), 'fence-elevation.svg');
+    });
+    
+    getParams();
+    updateParamsDisplay();
+    renderDrawings();
+    </script>
+</body>
+</html>
