@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>圍籬報價系統 | Fence Quote System</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px 16px;
+        }
+        
+        .container {
+            max-width: 480px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 24px;
+        }
+        
+        .header h1 {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+        
+        .lang-switch {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 12px;
+        }
+        
+        .lang-btn {
+            padding: 8px 16px;
+            border: 2px solid rgba(255,255,255,0.5);
+            background: transparent;
+            color: white;
+            border-radius: 20px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .lang-btn.active {
+            background: white;
+            color: #667eea;
+            border-color: white;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 20px;
+            padding: 24px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+        }
+        
+        .card-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .form-group {
+            margin-bottom: 16px;
+        }
+        
+        .form-group label {
+            display: block;
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 6px;
+            font-weight: 500;
+        }
+        
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 14px 16px;
+            font-size: 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            transition: border-color 0.3s;
+            background: #fafafa;
+        }
+        
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+            background: white;
+        }
+        
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+        
+        .btn {
+            width: 100%;
+            padding: 16px;
+            font-size: 18px;
+            font-weight: 600;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 8px;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .btn-primary:active {
+            transform: scale(0.98);
+        }
+        
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #333;
+            margin-top: 12px;
+        }
+        
+        .result-card {
+            display: none;
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            color: white;
+            border-radius: 20px;
+            padding: 24px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+        }
+        
+        .result-card.show {
+            display: block;
+        }
+        
+        .result-title {
+            font-size: 16px;
+            opacity: 0.9;
+            margin-bottom: 8px;
+        }
+        
+        .result-value {
+            font-size: 36px;
+            font-weight: 700;
+            margin-bottom: 16px;
+        }
+        
+        .result-detail {
+            background: rgba(255,255,255,0.2);
+            border-radius: 12px;
+            padding: 16px;
+            margin-top: 12px;
+        }
+        
+        .result-detail-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.2);
+        }
+        
+        .result-detail-row:last-child {
+            border-bottom: none;
+        }
+        
+        .btn-image {
+            background: white;
+            color: #11998e;
+            font-size: 16px;
+            margin-top: 16px;
+        }
+        
+        .btn-image:active {
+            background: #f0f0f0;
+        }
+        
+        .info-text {
+            font-size: 12px;
+            color: #999;
+            margin-top: 4px;
+        }
+        
+        @media (min-width: 768px) {
+            body {
+                padding: 40px 20px;
+            }
+            .header h1 {
+                font-size: 32px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔧 圍籬報價系統</h1>
+            <p id="subtitle">輸入參數，立即獲得報價</p>
+            <div class="lang-switch">
+                <button class="lang-btn active" data-lang="zh">中文</button>
+                <button class="lang-btn" data-lang="en">English</button>
+            </div>
+        </div>
+        
+        <!-- 參數輸入表單 -->
+        <div class="card">
+            <div class="card-title">
+                <span>📐</span>
+                <span id="form-title">尺寸參數</span>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label id="label-top">上邊 (公尺)</label>
+                    <input type="number" id="input-top" placeholder="0" min="0" step="0.1">
+                </div>
+                <div class="form-group">
+                    <label id="label-bottom">下邊 (公尺)</label>
+                    <input type="number" id="input-bottom" placeholder="0" min="0" step="0.1">
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label id="label-left">左邊 (公尺)</label>
+                    <input type="number" id="input-left" placeholder="0" min="0" step="0.1">
+                </div>
+                <div class="form-group">
+                    <label id="label-right">右邊 (公尺)</label>
+                    <input type="number" id="input-right" placeholder="0" min="0" step="0.1">
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label id="label-spacing">柱子間距 (公尺)</label>
+                <input type="number" id="input-spacing" placeholder="2" value="2" min="0.5" step="0.1">
+                <p class="info-text" id="info-spacing">預設值為 2 公尺</p>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-title">
+                <span>🚪</span>
+                <span id="door-title">門的設定</span>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label id="label-door-width">門寬 (公尺)</label>
+                    <input type="number" id="input-door-width" placeholder="0" min="0" step="0.1">
+                </div>
+                <div class="form-group">
+                    <label id="label-door-side">門位置</label>
+                    <select id="input-door-side">
+                        <option value="無">無</option>
+                        <option value="上">上</option>
+                        <option value="左">左</option>
+                        <option value="右">右</option>
+                        <option value="下">下</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label id="label-door-open">門開向</label>
+                <select id="input-door-open">
+                    <option value="內開">內開</option>
+                    <option value="外開">外開</option>
+                </select>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-title">
+                <span>📋</span>
+                <span id="spec-title">規格設定</span>
+            </div>
+            
+            <div class="form-group">
+                <label id="label-mesh">菱形網 (吋)</label>
+                <select id="input-mesh">
+                    <option value="2">2吋菱形網</option>
+                    <option value="3">3吋菱形網</option>
+                </select>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label id="label-pipe">亞管 (吋)</label>
+                    <select id="input-pipe">
+                        <option value="2">2吋</option>
+                        <option value="2.5">2.5吋</option>
+                        <option value="3">3吋</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label id="label-pipe-len">亞管長度 (公尺)</label>
+                    <input type="number" id="input-pipe-len" placeholder="2" value="2" min="1" step="0.1">
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label id="label-soil">植土深度 (cm)</label>
+                    <input type="number" id="input-soil" placeholder="50" value="50" min="0" step="1">
+                </div>
+                <div class="form-group">
+                    <label id="label-height">菱形網高度 (公尺)</label>
+                    <input type="number" id="input-height" placeholder="1.5" value="1.5" min="0.5" step="0.1">
+                </div>
+            </div>
+        </div>
+        
+        <button class="btn btn-primary" id="btn-calculate">
+            🔢 <span id="btn-calculate-text">計算報價</span>
+        </button>
+        
+        <!-- 計算結果 -->
+        <div class="result-card" id="result-card">
+            <div class="result-title" id="result-title">總周長</div>
+            <div class="result-value"><span id="result-perimeter">0</span>m</div>
+            
+            <div class="result-detail">
+                <div class="result-detail-row">
+                    <span id="detail-post-count">柱子總數</span>
+                    <span id="result-posts">0 支</span>
+                </div>
+                <div class="result-detail-row">
+                    <span id="detail-top">上邊</span>
+                    <span id="result-top">0m</span>
+                </div>
+                <div class="result-detail-row">
+                    <span id="detail-left">左邊</span>
+                    <span id="result-left">0m</span>
+                </div>
+                <div class="result-detail-row">
+                    <span id="detail-right">右邊</span>
+                    <span id="result-right">0m</span>
+                </div>
+                <div class="result-detail-row">
+                    <span id="detail-bottom">下邊</span>
+                    <span id="result-bottom">0m</span>
+                </div>
+            </div>
+            
+            <button class="btn btn-image" id="btn-image">
+                🖼️ <span id="btn-image-text">產生工程圖</span>
+            </button>
+        </div>
+    </div>
+    
+    <script>
+        // 多語言支援
+        const i18n = {
+            zh: {
+                subtitle: '輸入參數，立即獲得報價',
+                formTitle: '尺寸參數',
+                doorTitle: '門的設定',
+                specTitle: '規格設定',
+                labelTop: '上邊 (公尺)',
+                labelBottom: '下邊 (公尺)',
+                labelLeft: '左邊 (公尺)',
+                labelRight: '右邊 (公尺)',
+                labelSpacing: '柱子間距 (公尺)',
+                labelDoorWidth: '門寬 (公尺)',
+                labelDoorSide: '門位置',
+                labelDoorOpen: '門開向',
+                labelMesh: '菱形網 (吋)',
+                labelPipe: '亞管 (吋)',
+                labelPipeLen: '亞管長度 (公尺)',
+                labelSoil: '植土深度 (cm)',
+                labelHeight: '菱形網高度 (公尺)',
+                infoSpacing: '預設值為 2 公尺',
+                btnCalculate: '計算報價',
+                resultTitle: '總周長',
+                detailPostCount: '柱子總數',
+                detailTop: '上邊',
+                detailLeft: '左邊',
+                detailRight: '右邊',
+                detailBottom: '下邊',
+                btnImage: '產生工程圖'
+            },
+            en: {
+                subtitle: 'Enter parameters to get instant quote',
+                formTitle: 'Dimensions',
+                doorTitle: 'Gate Settings',
+                specTitle: 'Specifications',
+                labelTop: 'Top Side (m)',
+                labelBottom: 'Bottom Side (m)',
+                labelLeft: 'Left Side (m)',
+                labelRight: 'Right Side (m)',
+                labelSpacing: 'Post Spacing (m)',
+                labelDoorWidth: 'Gate Width (m)',
+                labelDoorSide: 'Gate Position',
+                labelDoorOpen: 'Gate Swing',
+                labelMesh: 'Diamond Mesh (inch)',
+                labelPipe: 'Pipe Size (inch)',
+                labelPipeLen: 'Pipe Length (m)',
+                labelSoil: 'Soil Depth (cm)',
+                labelHeight: 'Mesh Height (m)',
+                infoSpacing: 'Default: 2 meters',
+                btnCalculate: 'Calculate Quote',
+                resultTitle: 'Total Perimeter',
+                detailPostCount: 'Total Posts',
+                detailTop: 'Top',
+                detailLeft: 'Left',
+                detailRight: 'Right',
+                detailBottom: 'Bottom',
+                btnImage: 'Generate Drawing'
+            }
+        };
+        
+        let currentLang = 'zh';
+        
+        function setLanguage(lang) {
+            currentLang = lang;
+            const t = i18n[lang];
+            
+            document.getElementById('subtitle').textContent = t.subtitle;
+            document.getElementById('form-title').textContent = t.formTitle;
+            document.getElementById('door-title').textContent = t.doorTitle;
+            document.getElementById('spec-title').textContent = t.specTitle;
+            document.getElementById('label-top').textContent = t.labelTop;
+            document.getElementById('label-bottom').textContent = t.labelBottom;
+            document.getElementById('label-left').textContent = t.labelLeft;
+            document.getElementById('label-right').textContent = t.labelRight;
+            document.getElementById('label-spacing').textContent = t.labelSpacing;
+            document.getElementById('label-door-width').textContent = t.labelDoorWidth;
+            document.getElementById('label-door-side').textContent = t.labelDoorSide;
+            document.getElementById('label-door-open').textContent = t.labelDoorOpen;
+            document.getElementById('label-mesh').textContent = t.labelMesh;
+            document.getElementById('label-pipe').textContent = t.labelPipe;
+            document.getElementById('label-pipe-len').textContent = t.labelPipeLen;
+            document.getElementById('label-soil').textContent = t.labelSoil;
+            document.getElementById('label-height').textContent = t.labelHeight;
+            document.getElementById('info-spacing').textContent = t.infoSpacing;
+            document.getElementById('btn-calculate-text').textContent = t.btnCalculate;
+            document.getElementById('result-title').textContent = t.resultTitle;
+            document.getElementById('detail-post-count').textContent = t.detailPostCount;
+            document.getElementById('detail-top').textContent = t.detailTop;
+            document.getElementById('detail-left').textContent = t.detailLeft;
+            document.getElementById('detail-right').textContent = t.detailRight;
+            document.getElementById('detail-bottom').textContent = t.detailBottom;
+            document.getElementById('btn-image-text').textContent = t.btnImage;
+            
+            // 更新按鈕文字
+            document.querySelector('.lang-btn[data-lang="zh"]').classList.toggle('active', lang === 'zh');
+            document.querySelector('.lang-btn[data-lang="en"]').classList.toggle('active', lang === 'en');
+            
+            // 更新 HTML lang 屬性
+            document.documentElement.lang = lang === 'zh' ? 'zh-TW' : 'en';
+        }
+        
+        // 語言切換
+        document.querySelectorAll('.lang-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                setLanguage(btn.dataset.lang);
+            });
+        });
+        
+        // 計算功能
+        document.getElementById('btn-calculate').addEventListener('click', () => {
+            const top = parseFloat(document.getElementById('input-top').value) || 0;
+            const bottom = parseFloat(document.getElementById('input-bottom').value) || 0;
+            const left = parseFloat(document.getElementById('input-left').value) || 0;
+            const right = parseFloat(document.getElementById('input-right').value) || 0;
+            const spacing = parseFloat(document.getElementById('input-spacing').value) || 2;
+            
+            // 計算柱子數量
+            const colTop = top > 0 ? Math.ceil(top / spacing) : 0;
+            const colLeft = Math.ceil(left / spacing);
+            const colRight = Math.ceil(right / spacing);
+            const colBottom = bottom > 0 ? Math.ceil(bottom / spacing) : 0;
+            const totalPosts = colTop + colLeft + colRight + colBottom;
+            
+            // 總周長
+            const perimeter = top + left + right + bottom;
+            
+            // 更新結果
+            document.getElementById('result-perimeter').textContent = perimeter;
+            document.getElementById('result-posts').textContent = totalPosts + ' 支';
+            document.getElementById('result-top').textContent = top + 'm';
+            document.getElementById('result-left').textContent = left + 'm';
+            document.getElementById('result-right').textContent = right + 'm';
+            document.getElementById('result-bottom').textContent = bottom + 'm';
+            
+            // 顯示結果卡片
+            document.getElementById('result-card').classList.add('show');
+            
+            // 滾動到結果
+            document.getElementById('result-card').scrollIntoView({ behavior: 'smooth', block: 'center' });
+        });
+        
+        // 產生工程圖按鈕
+        document.getElementById('btn-image').addEventListener('click', () => {
+            const params = new URLSearchParams({
+                top: document.getElementById('input-top').value || '0',
+                bottom: document.getElementById('input-bottom').value || '0',
+                left: document.getElementById('input-left').value || '0',
+                right: document.getElementById('input-right').value || '0',
+                spacing: document.getElementById('input-spacing').value || '2',
+                door_width: document.getElementById('input-door-width').value || '0',
+                door_side: document.getElementById('input-door-side').value,
+                door_open: document.getElementById('input-door-open').value,
+                mesh: document.getElementById('input-mesh').value,
+                pipe: document.getElementById('input-pipe').value,
+                pipe_len: document.getElementById('input-pipe-len').value || '2',
+                soil: document.getElementById('input-soil').value || '50',
+                height: document.getElementById('input-height').value || '1.5'
+            });
+            
+            // 開啟新視窗生成工程圖
+            window.open('drawing.html?' + params.toString(), '_blank');
+        });
+    </script>
+</body>
+</html>
