@@ -185,16 +185,7 @@
             border-bottom: none;
         }
         
-        .btn-image {
-            background: white;
-            color: #11998e;
-            font-size: 16px;
-            margin-top: 16px;
-        }
-        
-        .btn-image:active {
-            background: #f0f0f0;
-        }
+
         
         .info-text {
             font-size: 12px;
@@ -364,9 +355,7 @@
                 </div>
             </div>
             
-            <button class="btn btn-image" id="btn-image">
-                🖼️ <span id="btn-image-text">產生工程圖</span>
-            </button>
+
         </div>
     </div>
     
@@ -399,7 +388,7 @@
                 detailLeft: '左邊',
                 detailRight: '右邊',
                 detailBottom: '下邊',
-                btnImage: '產生工程圖'
+                btnImage: '已移除'
             },
             en: {
                 subtitle: 'Enter parameters to get instant quote',
@@ -512,27 +501,7 @@
             document.getElementById('result-card').scrollIntoView({ behavior: 'smooth', block: 'center' });
         });
         
-        // 產生工程圖按鈕
-        document.getElementById('btn-image').addEventListener('click', () => {
-            const params = new URLSearchParams({
-                top: document.getElementById('input-top').value || '0',
-                bottom: document.getElementById('input-bottom').value || '0',
-                left: document.getElementById('input-left').value || '0',
-                right: document.getElementById('input-right').value || '0',
-                spacing: document.getElementById('input-spacing').value || '2',
-                door_width: document.getElementById('input-door-width').value || '0',
-                door_side: document.getElementById('input-door-side').value,
-                door_open: document.getElementById('input-door-open').value,
-                mesh: document.getElementById('input-mesh').value,
-                pipe: document.getElementById('input-pipe').value,
-                pipe_len: document.getElementById('input-pipe-len').value || '2',
-                soil: document.getElementById('input-soil').value || '50',
-                height: document.getElementById('input-height').value || '1.5'
-            });
-            
-            // 開啟新視窗生成工程圖
-            window.open('drawing.html?' + params.toString(), '_blank');
-        });
+        // 計算功能已整合到上面，無需跳頁
     </script>
 </body>
 </html>
