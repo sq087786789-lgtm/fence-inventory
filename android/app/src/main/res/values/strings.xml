@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">圍籬報價系統</string>
+    <string name="title_activity_main">圍籬報價系統</string>
+    <string name="package_name">com.shangqing.fenceapp</string>
+    <string name="custom_url_scheme">com.shangqing.fenceapp</string>
+</resources>

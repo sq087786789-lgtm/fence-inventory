@@ -1,0 +1,14 @@
+{
+  "name": "fence-app",
+  "version": "1.0.0",
+  "description": "圍籬報價系統",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "@capacitor/android": "^7.2.0",
+    "@capacitor/cli": "^7.2.0",
+    "@capacitor/core": "^7.2.0"
+  }
+}
