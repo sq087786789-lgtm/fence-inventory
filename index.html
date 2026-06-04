@@ -3,6 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#667eea">
+    <meta name="description" content="輸入圍籬尺寸參數，立即獲得報價與工程圖">
+    <link rel="manifest" href="manifest.json">
     <title>圍籬報價系統 | Fence Quote System</title>
     <style>
         * {
@@ -659,6 +662,15 @@
             });
             window.open('drawing.html?' + params.toString(), '_blank');
         });
+        
+        // Register Service Worker for PWA
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js').then(() => {
+                console.log('PWA Service Worker registered');
+            }).catch(err => {
+                console.log('SW registration failed:', err);
+            });
+        }
     </script>
 </body>
 </html>

@@ -1,0 +1,22 @@
+{
+  "name": "圍籬報價系統",
+  "short_name": "圍籬報價",
+  "description": "輸入圍籬尺寸參數，立即獲得報價與工程圖",
+  "start_url": "/fence-app/",
+  "display": "standalone",
+  "background_color": "#667eea",
+  "theme_color": "#667eea",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "https://raw.githubusercontent.com/sq087786789-lgtm/fence-app/main/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "https://raw.githubusercontent.com/sq087786789-lgtm/fence-app/main/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
