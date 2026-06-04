@@ -192,7 +192,66 @@
             color: #999;
             margin-top: 4px;
         }
-        
+
+        /* CLI 命令區塊 */
+        .cli-card {
+            display: none;
+            background: #1e1e1e;
+            color: #d4d4d4;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 20px;
+            font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            border: 1px solid #333;
+        }
+
+        .cli-card.show {
+            display: block;
+        }
+
+        .cli-card pre {
+            margin: 0;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+
+        .cli-label {
+            color: #569cd6;
+            font-size: 12px;
+            margin-bottom: 8px;
+            font-family: sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .cli-cmd {
+            color: #9cdcfe;
+        }
+
+        .cli-copy-btn {
+            background: #0e639c;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 8px 16px;
+            font-size: 13px;
+            cursor: pointer;
+            margin-top: 12px;
+            width: 100%;
+            transition: background 0.2s;
+        }
+
+        .cli-copy-btn:hover {
+            background: #1177bb;
+        }
+
+        .cli-copy-btn.copied {
+            background: #2ea043;
+        }
+
         @media (min-width: 768px) {
             body {
                 padding: 40px 20px;
@@ -221,25 +280,26 @@
                 <span id="form-title">尺寸參數</span>
             </div>
             
+            <!-- 修正：順序改為 上→左→右→下，與 generate_fence.py 一致 -->
             <div class="form-row">
                 <div class="form-group">
                     <label id="label-top">上邊 (公尺)</label>
                     <input type="number" id="input-top" placeholder="0" min="0" step="0.1">
                 </div>
                 <div class="form-group">
-                    <label id="label-bottom">下邊 (公尺)</label>
-                    <input type="number" id="input-bottom" placeholder="0" min="0" step="0.1">
+                    <label id="label-left">左邊 (公尺)</label>
+                    <input type="number" id="input-left" placeholder="0" min="0" step="0.1">
                 </div>
             </div>
             
             <div class="form-row">
                 <div class="form-group">
-                    <label id="label-left">左邊 (公尺)</label>
-                    <input type="number" id="input-left" placeholder="0" min="0" step="0.1">
-                </div>
-                <div class="form-group">
                     <label id="label-right">右邊 (公尺)</label>
                     <input type="number" id="input-right" placeholder="0" min="0" step="0.1">
+                </div>
+                <div class="form-group">
+                    <label id="label-bottom">下邊 (公尺)</label>
+                    <input type="number" id="input-bottom" placeholder="0" min="0" step="0.1">
                 </div>
             </div>
             
@@ -276,8 +336,8 @@
             <div class="form-group">
                 <label id="label-door-open">門開向</label>
                 <select id="input-door-open">
-                    <option value="內開">內開</option>
-                    <option value="外開">外開</option>
+                    <option value="內">內開</option>
+                    <option value="外">外開</option>
                 </select>
             </div>
         </div>
@@ -354,8 +414,13 @@
                     <span id="result-bottom">0m</span>
                 </div>
             </div>
-            
+        </div>
 
+        <!-- CLI 命令產生器 -->
+        <div class="cli-card" id="cli-card">
+            <div class="cli-label">Hermes CLI 命令（复制到 Hermes Agent）</div>
+            <pre id="cli-output"></pre>
+            <button class="cli-copy-btn" id="btn-copy-cli">📋 複製命令</button>
         </div>
     </div>
     
@@ -388,7 +453,9 @@
                 detailLeft: '左邊',
                 detailRight: '右邊',
                 detailBottom: '下邊',
-                btnImage: '已移除'
+                cliLabel: 'Hermes CLI 命令（复制到 Hermes Agent）',
+                btnCopyCli: '📋 複製命令',
+                btnCopied: '✅ 已複製'
             },
             en: {
                 subtitle: 'Enter parameters to get instant quote',
@@ -416,7 +483,9 @@
                 detailLeft: 'Left',
                 detailRight: 'Right',
                 detailBottom: 'Bottom',
-                btnImage: 'Generate Drawing'
+                cliLabel: 'Hermes CLI Command (copy to Hermes Agent)',
+                btnCopyCli: '📋 Copy Command',
+                btnCopied: '✅ Copied'
             }
         };
         
@@ -451,14 +520,14 @@
             document.getElementById('detail-left').textContent = t.detailLeft;
             document.getElementById('detail-right').textContent = t.detailRight;
             document.getElementById('detail-bottom').textContent = t.detailBottom;
-            document.getElementById('btn-image-text').textContent = t.btnImage;
             
-            // 更新按鈕文字
             document.querySelector('.lang-btn[data-lang="zh"]').classList.toggle('active', lang === 'zh');
             document.querySelector('.lang-btn[data-lang="en"]').classList.toggle('active', lang === 'en');
             
-            // 更新 HTML lang 屬性
             document.documentElement.lang = lang === 'zh' ? 'zh-TW' : 'en';
+            
+            // 更新 CLI 面板
+            updateCLIPanel();
         }
         
         // 語言切換
@@ -471,9 +540,9 @@
         // 計算功能
         document.getElementById('btn-calculate').addEventListener('click', () => {
             const top = parseFloat(document.getElementById('input-top').value) || 0;
-            const bottom = parseFloat(document.getElementById('input-bottom').value) || 0;
             const left = parseFloat(document.getElementById('input-left').value) || 0;
             const right = parseFloat(document.getElementById('input-right').value) || 0;
+            const bottom = parseFloat(document.getElementById('input-bottom').value) || 0;
             const spacing = parseFloat(document.getElementById('input-spacing').value) || 2;
             
             // 計算柱子數量
@@ -499,9 +568,58 @@
             
             // 滾動到結果
             document.getElementById('result-card').scrollIntoView({ behavior: 'smooth', block: 'center' });
+            
+            // 更新 CLI 命令
+            updateCLIPanel();
         });
         
-        // 計算功能已整合到上面，無需跳頁
+        // 更新 CLI 面板
+        function updateCLIPanel() {
+            const top = parseFloat(document.getElementById('input-top').value) || 0;
+            const left = parseFloat(document.getElementById('input-left').value) || 0;
+            const right = parseFloat(document.getElementById('input-right').value) || 0;
+            const bottom = parseFloat(document.getElementById('input-bottom').value) || 0;
+            const spacing = parseFloat(document.getElementById('input-spacing').value) || 2;
+            const doorWidth = parseFloat(document.getElementById('input-door-width').value) || 0;
+            const doorSide = document.getElementById('input-door-side').value;
+            const doorOpen = document.getElementById('input-door-open').value;
+            const mesh = document.getElementById('input-mesh').value;
+            const pipe = document.getElementById('input-pipe').value;
+            const pipeLen = parseFloat(document.getElementById('input-pipe-len').value) || 2;
+            const soil = parseFloat(document.getElementById('input-soil').value) || 50;
+            const height = parseFloat(document.getElementById('input-height').value) || 1.5;
+            
+            if (top === 0 && left === 0 && right === 0 && bottom === 0) {
+                document.getElementById('cli-card').classList.remove('show');
+                return;
+            }
+            
+            // 組合 CLI 命令
+            const cmd = `圍籬 上邊=${top} 左邊=${left} 右邊=${right} 下邊=${bottom} 柱子間距=${spacing} 門寬=${doorWidth} 門位置=${doorSide} 門開向=${doorOpen} 菱形網=${mesh}吋 亞管=${pipe}吋 亞管長度=${pipeLen}m 植土=${soil}cm 菱形網高度=${height}m`;
+            
+            document.getElementById('cli-output').textContent = cmd;
+            document.getElementById('cli-card').classList.add('show');
+            
+            // 更新複製按鈕文字
+            const copyBtn = document.getElementById('btn-copy-cli');
+            const t = i18n[currentLang];
+            copyBtn.textContent = t.btnCopyCli;
+            copyBtn.classList.remove('copied');
+        }
+        
+        // 複製 CLI 命令
+        document.getElementById('btn-copy-cli').addEventListener('click', function() {
+            const cmd = document.getElementById('cli-output').textContent;
+            navigator.clipboard.writeText(cmd).then(() => {
+                const t = i18n[currentLang];
+                this.textContent = t.btnCopied;
+                this.classList.add('copied');
+                setTimeout(() => {
+                    this.textContent = t.btnCopyCli;
+                    this.classList.remove('copied');
+                }, 2000);
+            });
+        });
     </script>
 </body>
 </html>
