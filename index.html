@@ -141,6 +141,18 @@
             margin-top: 12px;
         }
         
+        .btn-image {
+            background: white;
+            color: #11998e;
+            font-size: 16px;
+            margin-top: 16px;
+            border: 2px solid #11998e;
+        }
+        
+        .btn-image:active {
+            background: #f0f0f0;
+        }
+        
         .result-card {
             display: none;
             background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
@@ -387,6 +399,10 @@
             🔢 <span id="btn-calculate-text">計算報價</span>
         </button>
         
+        <button class="btn btn-image" id="btn-image">
+            🖼️ <span id="btn-image-text">產生工程圖</span>
+        </button>
+        
         <!-- 計算結果 -->
         <div class="result-card" id="result-card">
             <div class="result-title" id="result-title">總周長</div>
@@ -453,6 +469,7 @@
                 detailLeft: '左邊',
                 detailRight: '右邊',
                 detailBottom: '下邊',
+                btnImage: '產生工程圖',
                 cliLabel: 'Hermes CLI 命令（复制到 Hermes Agent）',
                 btnCopyCli: '📋 複製命令',
                 btnCopied: '✅ 已複製'
@@ -483,6 +500,7 @@
                 detailLeft: 'Left',
                 detailRight: 'Right',
                 detailBottom: 'Bottom',
+                btnImage: 'Generate Drawing',
                 cliLabel: 'Hermes CLI Command (copy to Hermes Agent)',
                 btnCopyCli: '📋 Copy Command',
                 btnCopied: '✅ Copied'
@@ -520,6 +538,7 @@
             document.getElementById('detail-left').textContent = t.detailLeft;
             document.getElementById('detail-right').textContent = t.detailRight;
             document.getElementById('detail-bottom').textContent = t.detailBottom;
+            document.getElementById('btn-image-text').textContent = t.btnImage;
             
             document.querySelector('.lang-btn[data-lang="zh"]').classList.toggle('active', lang === 'zh');
             document.querySelector('.lang-btn[data-lang="en"]').classList.toggle('active', lang === 'en');
@@ -619,6 +638,26 @@
                     this.classList.remove('copied');
                 }, 2000);
             });
+        });
+        
+        // 產生工程圖按鈕
+        document.getElementById('btn-image').addEventListener('click', () => {
+            const params = new URLSearchParams({
+                top: document.getElementById('input-top').value || '0',
+                left: document.getElementById('input-left').value || '0',
+                right: document.getElementById('input-right').value || '0',
+                bottom: document.getElementById('input-bottom').value || '0',
+                spacing: document.getElementById('input-spacing').value || '2',
+                door_width: document.getElementById('input-door-width').value || '0',
+                door_side: document.getElementById('input-door-side').value,
+                door_open: document.getElementById('input-door-open').value,
+                mesh: document.getElementById('input-mesh').value,
+                pipe: document.getElementById('input-pipe').value,
+                pipe_len: document.getElementById('input-pipe-len').value || '2',
+                soil: document.getElementById('input-soil').value || '50',
+                height: document.getElementById('input-height').value || '1.5'
+            });
+            window.open('drawing.html?' + params.toString(), '_blank');
         });
     </script>
 </body>
