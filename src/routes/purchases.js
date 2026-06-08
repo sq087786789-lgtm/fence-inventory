@@ -1,11 +1,11 @@
 const express = require('express');
 const router = express.Router();
-const db = require('../db/db');
+const pool = require('../db/db');
 
 // GET /api/purchases
-router.get('/', (req, res) => {
+router.get('/', async (req, res) => {
   try {
-    const stmt = db.prepare(`
+    const result = await pool.query(`
       SELECT pr.*, p.name as product_name, p.sku, u.name as created_by_name
       FROM purchase_records pr
       JOIN products p ON pr.product_id = p.id
@@ -13,23 +13,34 @@ router.get('/', (req, res) => {
       ORDER BY pr.created_at DESC
       LIMIT 100
     `);
-    res.json(stmt.all());
+    res.json(result.rows);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
 // POST /api/purchases
-router.post('/', (req, res) => {
+router.post('/', async (req, res) => {
   const { product_id, quantity, price, supplier, notes } = req.body;
+  const client = await pool.connect();
   try {
-    const insert = db.prepare(`INSERT INTO purchase_records (product_id, quantity, price, supplier, notes, created_by) VALUES (?,?,?,?,?,?)`);
-    const result = insert.run(product_id, quantity, price || 0, supplier, notes, req.user?.id || null);
-    // 直接入庫
-    db.prepare(`UPDATE inventory SET quantity = quantity + ?, updated_at = datetime('now') WHERE product_id = ?`).run(quantity, product_id);
-    res.json({ id: result.lastInsertRowid, product_id, quantity, price });
+    await client.query('BEGIN');
+    const r = await client.query(
+      `INSERT INTO purchase_records (product_id, quantity, price, supplier, notes, created_by)
+       VALUES ($1,$2,$3,$4,$5,$6) RETURNING *`,
+      [product_id, quantity, price || 0, supplier, notes, req.user?.id || null]
+    );
+    await client.query(`
+      UPDATE inventory SET quantity = quantity + $1, updated_at = NOW()
+      WHERE product_id = $2
+    `, [quantity, product_id]);
+    await client.query('COMMIT');
+    res.json(r.rows[0]);
   } catch (err) {
+    await client.query('ROLLBACK');
     res.status(400).json({ error: err.message });
+  } finally {
+    client.release();
   }
 });
 
