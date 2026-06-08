@@ -1,86 +1,71 @@
 const express = require('express');
 const router = express.Router();
-const pool = require('../db/db');
+const db = require('../db/db');
 
-// GET /api/orders - 取得訂單列表
-router.get('/', async (req, res) => {
+// GET /api/orders
+router.get('/', (req, res) => {
   try {
-    const result = await pool.query(`
+    const stmt = db.prepare(`
       SELECT o.*, u.name as created_by_name
       FROM orders o
       LEFT JOIN users u ON o.created_by = u.id
       ORDER BY o.created_at DESC
       LIMIT 100
     `);
-    res.json(result.rows);
+    res.json(stmt.all());
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-// GET /api/orders/:id - 取得訂單明細
-router.get('/:id', async (req, res) => {
+// GET /api/orders/:id
+router.get('/:id', (req, res) => {
   try {
-    const order = await pool.query(`SELECT * FROM orders WHERE id=$1`, [req.params.id]);
-    if (order.rows.length === 0) return res.status(404).json({ error: '找不到訂單' });
-    const items = await pool.query(`
+    const order = db.prepare(`SELECT * FROM orders WHERE id=?`).get(req.params.id);
+    if (!order) return res.status(404).json({ error: '找不到訂單' });
+    const items = db.prepare(`
       SELECT oi.*, p.name, p.sku, p.unit
       FROM order_items oi
       JOIN products p ON oi.product_id = p.id
-      WHERE oi.order_id = $1
-    `, [req.params.id]);
-    res.json({ ...order.rows[0], items: items.rows });
+      WHERE oi.order_id = ?
+    `).all(req.params.id);
+    res.json({ ...order, items });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-// POST /api/orders - 新建訂單
-router.post('/', async (req, res) => {
-  const { customer_name, notes, items } = req.body; // items: [{product_id, quantity, price}]
-  const client = await pool.connect();
+// POST /api/orders
+router.post('/', (req, res) => {
+  const { customer_name, notes, items } = req.body;
+  const insertOrder = db.prepare(`INSERT INTO orders (order_no, customer_name, notes, created_by) VALUES (?,?,?,?)`);
+  const insertItem = db.prepare(`INSERT INTO order_items (order_id, product_id, quantity, price, subtotal) VALUES (?,?,?,?,?)`);
+  const updateInventory = db.prepare(`UPDATE inventory SET quantity = quantity - ?, updated_at = datetime('now') WHERE product_id = ?`);
+  const updateOrderTotal = db.prepare(`UPDATE orders SET total_amount = ? WHERE id = ?`);
   try {
-    await client.query('BEGIN');
     const orderNo = `ORD-${Date.now()}`;
-    const o = await client.query(
-      `INSERT INTO orders (order_no, customer_name, notes, created_by) VALUES ($1,$2,$3,$4) RETURNING *`,
-      [orderNo, customer_name, notes, req.user?.id || null]
-    );
+    const orderResult = insertOrder.run(orderNo, customer_name, notes, req.user?.id || null);
+    const orderId = orderResult.lastInsertRowid;
     let total = 0;
     for (const item of items) {
       const subtotal = item.quantity * item.price;
       total += subtotal;
-      await client.query(
-        `INSERT INTO order_items (order_id, product_id, quantity, price, subtotal) VALUES ($1,$2,$3,$4,$5)`,
-        [o.rows[0].id, item.product_id, item.quantity, item.price, subtotal]
-      );
-      // 庫存扣減
-      await client.query(
-        `UPDATE inventory SET quantity = quantity - $1, updated_at = NOW() WHERE product_id = $2`,
-        [item.quantity, item.product_id]
-      );
+      insertItem.run(orderId, item.product_id, item.quantity, item.price, subtotal);
+      updateInventory.run(item.quantity, item.product_id);
     }
-    await client.query(`UPDATE orders SET total_amount=$1 WHERE id=$2`, [total, o.rows[0].id]);
-    await client.query('COMMIT');
-    res.json(o.rows[0]);
+    updateOrderTotal.run(total, orderId);
+    res.json({ id: orderId, order_no: orderNo, total_amount: total });
   } catch (err) {
-    await client.query('ROLLBACK');
     res.status(400).json({ error: err.message });
-  } finally {
-    client.release();
   }
 });
 
-// PUT /api/orders/:id/status - 更新訂單狀態
-router.put('/:id/status', async (req, res) => {
+// PUT /api/orders/:id/status
+router.put('/:id/status', (req, res) => {
   const { status } = req.body;
   try {
-    const result = await pool.query(
-      `UPDATE orders SET status=$1 WHERE id=$2 RETURNING *`,
-      [status, req.params.id]
-    );
-    if (result.rows.length === 0) return res.status(404).json({ error: '找不到' });
-    res.json(result.rows[0]);
+    db.prepare(`UPDATE orders SET status=? WHERE id=?`).run(status, req.params.id);
+    res.json({ id: parseInt(req.params.id), status });
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
