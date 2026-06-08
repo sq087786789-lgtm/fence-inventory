@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>圍籬進銷存 - 管理後台</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f0f2f5;min-height:100vh}
+.header{background:#667eea;color:#fff;padding:16px 24px;display:flex;justify-content:space-between;align-items:center}
+.header h1{font-size:20px;font-weight:700}
+.header-right{display:flex;gap:12px;align-items:center}
+.header-right span{font-size:14px;opacity:.9}
+.logout-btn{background:rgba(255,255,255,.2);border:none;color:#fff;padding:8px 16px;border-radius:8px;cursor:pointer;font-size:14px}
+.logout-btn:hover{background:rgba(255,255,255,.3)}
+.container{max-width:1200px;margin:0 auto;padding:24px}
+.tabs{display:flex;gap:8px;margin-bottom:24px;flex-wrap:wrap}
+.tab{padding:10px 20px;background:#fff;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:500;color:#667}
+.tab.active{background:#667eea;color:#fff}
+.tab:hover:not(.active){background:#e8ecf4}
+.card{background:#fff;border-radius:12px;padding:24px;margin-bottom:20px;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+.card h2{font-size:18px;margin-bottom:16px;color:#333}
+.form-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-bottom:16px}
+.form-grid input,.form-grid select,.form-grid textarea{width:100%;padding:10px 12px;border:1px solid #ddd;border-radius:8px;font-size:14px}
+.form-grid input:focus,.form-grid select:focus,.form-grid textarea:focus{outline:none;border-color:#667eea}
+.btn{background:#667eea;color:#fff;border:none;padding:10px 20px;border-radius:8px;cursor:pointer;font-size:14px;font-weight:500}
+.btn:hover{background:#5a6fd6}
+.btn-danger{background:#e74c3c}
+.btn-danger:hover{background:#c0392b}
+.btn-sm{padding:6px 12px;font-size:13px}
+table{width:100%;border-collapse:collapse}
+th,td{padding:12px;text-align:left;border-bottom:1px solid #eee;font-size:14px}
+th{background:#f8f9fb;color:#667;font-weight:600}
+tr:hover{background:#f8f9fb}
+.badge{padding:4px 8px;border-radius:6px;font-size:12px;font-weight:600}
+.badge-pending{background:#fff3cd;color:#856404}
+.badge-confirmed{background:#d4edda;color:#155724}
+.badge-shipped{background:#cce5ff;color:#004085}
+.badge-completed{background:#e2e3e5;color:#383d41}
+.low-stock{color:#e74c3c;font-weight:600}
+.hidden{display:none}
+.login-wrap{max-width:400px;margin:100px auto;background:#fff;border-radius:16px;padding:40px;box-shadow:0 4px 20px rgba(0,0,0,.1)}
+.login-wrap h2{text-align:center;margin-bottom:24px;color:#333}
+.login-wrap input{width:100%;padding:12px;margin-bottom:12px;border:1px solid #ddd;border-radius:8px;font-size:14px}
+.login-wrap .btn{width:100%;padding:14px}
+#alert-box{position:fixed;top:80px;right:24px;background:#333;color:#fff;padding:12px 20px;border-radius:8px;font-size:14px;opacity:0;transition:opacity .3s;z-index:1000}
+#alert-box.show{opacity:1}
+</style>
+</head>
+<body>
+<div id="alert-box"></div>
+
+<!-- 登入畫面 -->
+<div id="login-view" class="login-wrap">
+  <h2>圍籬進銷存</h2>
+  <input type="text" id="username" placeholder="帳號" onkeydown="if(event.key==='Enter')doLogin()">
+  <input type="password" id="password" placeholder="密碼" onkeydown="if(event.key==='Enter')doLogin()">
+  <button class="btn" onclick="doLogin()">登入</button>
+</div>
+
+<!-- 主體 -->
+<div id="main-view" class="hidden">
+  <div class="header">
+    <h1>🏗 圍籬進銷存</h1>
+    <div class="header-right">
+      <span id="user-info"></span>
+      <button class="logout-btn" onclick="doLogout()">登出</button>
+    </div>
+  </div>
+  <div class="container">
+    <div class="tabs">
+      <button class="tab active" onclick="showTab('inventory')">📦 庫存</button>
+      <button class="tab" onclick="showTab('products')">🔧 配件</button>
+      <button class="tab" onclick="showTab('orders')">📋 訂單</button>
+      <button class="tab" onclick="showTab('purchases')">🚚 進貨</button>
+    </div>
+
+    <!-- 庫存 Tab -->
+    <div id="tab-inventory" class="tab-content">
+      <div class="card">
+        <h2>📦 庫存列表</h2>
+        <div id="inventory-list"></div>
+      </div>
+    </div>
+
+    <!-- 配件 Tab -->
+    <div id="tab-products" class="tab-content hidden">
+      <div class="card">
+        <h2>🔧 新增配件</h2>
+        <div class="form-grid">
+          <input type="text" id="p-sku" placeholder="SKU 編號">
+          <input type="text" id="p-name" placeholder="配件名稱">
+          <select id="p-category"><option value="">選擇分類</option></select>
+          <input type="text" id="p-unit" placeholder="單位（如：支、卷、個）" value="個">
+          <input type="number" id="p-price" placeholder="單價">
+        </div>
+        <button class="btn" onclick="addProduct()">新增配件</button>
+      </div>
+      <div class="card">
+        <h2>🔧 配件列表</h2>
+        <div id="products-list"></div>
+      </div>
+    </div>
+
+    <!-- 訂單 Tab -->
+    <div id="tab-orders" class="tab-content hidden">
+      <div class="card">
+        <h2>📋 新建訂單</h2>
+        <div class="form-grid">
+          <input type="text" id="o-customer" placeholder="客戶名稱">
+          <textarea id="o-notes" placeholder="備註" rows="2"></textarea>
+        </div>
+        <div id="order-items-wrap"></div>
+        <button class="btn btn-sm" onclick="addOrderItem()">+ 加入品項</button><br><br>
+        <button class="btn" onclick="createOrder()">開立訂單</button>
+      </div>
+      <div class="card">
+        <h2>📋 訂單列表</h2>
+        <div id="orders-list"></div>
+      </div>
+    </div>
+
+    <!-- 進貨 Tab -->
+    <div id="tab-purchases" class="tab-content hidden">
+      <div class="card">
+        <h2>🚚 新增進貨（直接入庫）</h2>
+        <div class="form-grid">
+          <select id="pu-product"><option value="">選擇配件</option></select>
+          <input type="number" id="pu-quantity" placeholder="數量">
+          <input type="number" id="pu-price" placeholder="進貨單價（選填）">
+          <input type="text" id="pu-supplier" placeholder="供應商（選填）">
+          <input type="text" id="pu-notes" placeholder="備註（選填）">
+        </div>
+        <button class="btn" onclick="addPurchase()">確認進貨入庫</button>
+      </div>
+      <div class="card">
+        <h2>🚚 進貨記錄</h2>
+        <div id="purchases-list"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = '';
+let token = localStorage.getItem('inv_token');
+let user = null;
+let products = [];
+let orderItemCount = 0;
+
+function showAlert(msg) {
+  const el = document.getElementById('alert-box');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 3000);
+}
+
+function showTab(name) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.add('hidden'));
+  document.querySelector(`[onclick="showTab('${name}')"]`).classList.add('active');
+  document.getElementById('tab-' + name).classList.remove('hidden');
+  if (name === 'inventory') loadInventory();
+  if (name === 'products') loadProducts();
+  if (name === 'orders') loadOrders();
+  if (name === 'purchases') loadPurchases();
+}
+
+async function doLogin() {
+  const res = await fetch(API + '/api/auth/login', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({username: document.getElementById('username').value, password: document.getElementById('password').value})
+  });
+  const data = await res.json();
+  if (!res.ok) return showAlert(data.error);
+  localStorage.setItem('inv_token', data.token);
+  token = data.token;
+  user = data.user;
+  document.getElementById('login-view').classList.add('hidden');
+  document.getElementById('main-view').classList.remove('hidden');
+  document.getElementById('user-info').textContent = user.name || user.username;
+  loadCategories();
+  showTab('inventory');
+}
+
+function doLogout() {
+  localStorage.remove('item');
+  location.reload();
+}
+
+async function api(url, opts = {}) {
+  const headers = {'Content-Type':'application/json'};
+  if (token) headers['Authorization'] = 'Bearer ' + token;
+  const res = await fetch(API + url, {...opts, headers: {...headers, ...opts.headers}});
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'API錯誤');
+  return data;
+}
+
+async function loadCategories() {
+  try {
+    const cats = await api('/api/categories');
+    const selects = document.querySelectorAll('#p-category, #pu-product');
+    selects.forEach(sel => {
+      const currVal = sel.value;
+      sel.innerHTML = '<option value="">選擇分類</option>';
+      cats.forEach(c => { sel.innerHTML += `<option value="${c.id}">${c.name}</option>`; });
+      sel.value = currVal;
+    });
+  } catch(e) {}
+}
+
+async function loadInventory() {
+  const data = await api('/api/inventory');
+  const low = await api('/api/inventory/low-stock').catch(()=>[]);
+  const lowIds = new Set(low.map(l=>l.id));
+  let html = '<table><tr><th>SKU</th><th>品名</th><th>分類</th><th>庫存</th><th>安全存量</th><th>單位</th><th>單價</th></tr>';
+  data.forEach(p => {
+    const lowClass = lowIds.has(p.id) ? ' low-stock' : '';
+    html += `<tr><td>${p.sku}</td><td>${p.name}</td><td>${p.category_name||'-'}</td><td class="${lowClass}">${p.quantity ?? 0}</td><td>${p.min_quantity??0}</td><td>${p.unit}</td><td>$${p.price}</td></tr>`;
+  });
+  html += '</table>';
+  document.getElementById('inventory-list').innerHTML = data.length ? html : '<p style="color:#999">尚無資料</p>';
+}
+
+async function loadProducts() {
+  products = await api('/api/products');
+  let html = '<table><tr><th>SKU</th><th>名稱</th><th>分類</th><th>單位</th><th>單價</th><th>操作</th></tr>';
+  products.forEach(p => {
+    html += `<tr><td>${p.sku}</td><td>${p.name}</td><td>${p.category_name||'-'}</td><td>${p.unit}</td><td>$${p.price}</td><td><button class="btn btn-danger btn-sm" onclick="delProduct(${p.id})">刪除</button></td></tr>`;
+  });
+  html += '</table>';
+  document.getElementById('products-list').innerHTML = products.length ? html : '<p style="color:#999">尚無資料，請先新增配件</p>';
+}
+
+async function addProduct() {
+  const sku = document.getElementById('p-sku').value.trim();
+  const name = document.getElementById('p-name').value.trim();
+  const category_id = document.getElementById('p-category').value;
+  const unit = document.getElementById('p-unit').value.trim();
+  const price = parseFloat(document.getElementById('p-price').value) || 0;
+  if (!sku || !name) return showAlert('請填寫 SKU 和名稱');
+  try {
+    await api('/api/products', {method:'POST', body: JSON.stringify({sku, name, category_id: category_id||null, unit, price})});
+    showAlert('已新增配件');
+    ['p-sku','p-name','p-unit','p-price'].forEach(id=>document.getElementById(id).value='');
+    loadProducts();
+  } catch(e) { showAlert(e.message); }
+}
+
+async function delProduct(id) {
+  if (!confirm('確定刪除？')) return;
+  try {
+    await api('/api/products/'+id, {method:'DELETE'});
+    showAlert('已刪除');
+    loadProducts();
+  } catch(e) { showAlert(e.message); }
+}
+
+async function loadOrders() {
+  const data = await api('/api/orders');
+  const statusMap = {pending:'待處理',confirmed:'已確認',shipped:'已出貨',completed:'已完成'};
+  let html = '<table><tr><th>單號</th><th>客戶</th><th>金額</th><th>狀態</th><th>日期</th><th>操作</th></tr>';
+  data.forEach(o => {
+    html += `<tr><td>${o.order_no}</td><td>${o.customer_name||'-'}</td><td>$${o.total_amount}</td><td><span class="badge badge-${o.status}">${statusMap[o.status]||o.status}</span></td><td>${new Date(o.created_at).toLocaleDateString()}</td><td><button class="btn btn-sm" onclick="viewOrder(${o.id})">查看</button></td></tr>`;
+  });
+  html += '</table>';
+  document.getElementById('orders-list').innerHTML = data.length ? html : '<p style="color:#999">尚無訂單</p>';
+}
+
+function addOrderItem() {
+  orderItemCount++;
+  const wrap = document.getElementById('order-items-wrap');
+  const div = document.createElement('div');
+  div.id = 'oi-' + orderItemCount;
+  div.style = 'display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:8px;';
+  div.innerHTML = `<select class="oi-product"><option value="">選擇配件</option>${products.map(p=>`<option value="${p.id}" data-price="${p.price}">${p.name} ($${p.price}/${p.unit})</option>`).join('')}</select><input type="number" class="oi-qty" placeholder="數量"><button class="btn btn-danger btn-sm" onclick="removeOrderItem(${orderItemCount})">✕</button>`;
+  wrap.appendChild(div);
+}
+
+function removeOrderItem(id) {
+  document.getElementById('oi-' + id)?.remove();
+}
+
+async function createOrder() {
+  const customer_name = document.getElementById('o-customer').value.trim();
+  const notes = document.getElementById('o-notes').value.trim();
+  const rows = document.querySelectorAll('#order-items-wrap > div');
+  const items = [];
+  for (const row of rows) {
+    const product_id = row.querySelector('.oi-product').value;
+    const quantity = parseFloat(row.querySelector('.oi-qty').value);
+    if (!product_id || !quantity) continue;
+    const price = parseFloat(row.querySelector('.oi-product').selectedOptions[0].dataset.price) || 0;
+    items.push({product_id, quantity, price});
+  }
+  if (!items.length) return showAlert('請加入至少一個品項');
+  try {
+    await api('/api/orders', {method:'POST', body: JSON.stringify({customer_name, notes, items})});
+    showAlert('訂單已開立，庫存已扣');
+    document.getElementById('order-items-wrap').innerHTML = '';
+    document.getElementById('o-customer').value = '';
+    document.getElementById('o-notes').value = '';
+    loadOrders();
+    loadInventory();
+  } catch(e) { showAlert(e.message); }
+}
+
+async function viewOrder(id) {
+  const o = await api('/api/orders/'+id);
+  let html = `<h3>單號：${o.order_no}</h3><p>客戶：${o.customer_name||'-'} | 金額：$${o.total_amount} | 狀態：${o.status}</p><table><tr><th>品名</th><th>數量</th><th>單價</th><th>小計</th></tr>`;
+  o.items.forEach(i => { html += `<tr><td>${i.name}</td><td>${i.quantity} ${i.unit}</td><td>$${i.price}</td><td>$${i.subtotal}</td></tr>`; });
+  html += '</table>';
+  document.getElementById('orders-list').innerHTML = '<button class="btn btn-sm" onclick="loadOrders()">← 返回列表</button><br><br>' + html;
+}
+
+async function loadPurchases() {
+  const data = await api('/api/purchases');
+  let html = '<table><tr><th>日期</th><th>配件</th><th>數量</th><th>單價</th><th>供應商</th><th>備註</th></tr>';
+  data.forEach(p => {
+    html += `<tr><td>${new Date(p.created_at).toLocaleDateString()}</td><td>${p.product_name}</td><td>${p.quantity}</td><td>${p.price?'$'+p.price:'-'}</td><td>${p.supplier||'-'}</td><td>${p.notes||'-'}</td></tr>`;
+  });
+  html += '</table>';
+  document.getElementById('purchases-list').innerHTML = data.length ? html : '<p style="color:#999">尚無進貨記錄</p>';
+}
+
+async function addPurchase() {
+  const product_id = document.getElementById('pu-product').value;
+  const quantity = parseFloat(document.getElementById('pu-quantity').value);
+  const price = parseFloat(document.getElementById('pu-price').value) || 0;
+  const supplier = document.getElementById('pu-supplier').value.trim();
+  const notes = document.getElementById('pu-notes').value.trim();
+  if (!product_id || !quantity) return showAlert('請選擇配件並填寫數量');
+  try {
+    await api('/api/purchases', {method:'POST', body: JSON.stringify({product_id, quantity, price, supplier, notes})});
+    showAlert('進貨已入庫');
+    ['pu-quantity','pu-price','pu-supplier','pu-notes'].forEach(id=>document.getElementById(id).value='');
+    loadPurchases();
+    loadInventory();
+  } catch(e) { showAlert(e.message); }
+}
+
+// Init
+if (token) {
+  try {
+    const data = await api('/api/auth/login');
+  } catch(e) {
+    token = null;
+  }
+}
+if (token) {
+  document.getElementById('login-view').classList.add('hidden');
+  document.getElementById('main-view').classList.remove('hidden');
+  loadCategories();
+  showTab('inventory');
+} else {
+  document.getElementById('login-view').classList.remove('hidden');
+  document.getElementById('main-view').classList.add('hidden');
+}
+</script>
+</body>
+</html>
