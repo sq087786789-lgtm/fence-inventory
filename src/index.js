@@ -15,6 +15,7 @@ const orderRoutes = require('./routes/orders');
 const purchaseRoutes = require('./routes/purchases');
 const categoryRoutes = require('./routes/categories');
 const importRoutes = require('./routes/import');
+const initDb = require('./db/init');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
@@ -23,6 +24,15 @@ app.use('/api/orders', orderRoutes);
 app.use('/api/purchases', purchaseRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/import', importRoutes);
+
+app.get('/api/init-db', async (req, res) => {
+  try {
+    await initDb();
+    res.json({ message: 'Database initialized' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 app.get('/admin', (req, res) => {
   res.sendFile(path.join(__dirname, '../public/admin.html'));
