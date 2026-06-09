@@ -68,7 +68,19 @@ app.get('/', (req, res) => {
 
 // Admin: deduplicate categories (one-time cleanup)
 app.get('/api/admin/dedupe-categories', async (req, res) => {
-  res.json({ status: 'endpoint reached', version: 'v3' });
+  if (!pool) return res.status(503).json({ error: 'Database not configured' });
+  // Hardcoded: 舊的 id 1-4, 新的 id 5-8
+  const idsToDelete = [1, 2, 3, 4];
+  const deleted = [];
+  for (const id of idsToDelete) {
+    try {
+      const r = await pool.query(`DELETE FROM categories WHERE id = $1 RETURNING id, name`, [id]);
+      if (r.rows.length > 0) deleted.push(r.rows[0]);
+    } catch (err) {
+      deleted.push({ id, error: err.message });
+    }
+  }
+  res.json({ deleted });
 });
 
 app.get('/admin', (req, res) => {
