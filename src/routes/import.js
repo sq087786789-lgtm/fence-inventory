@@ -8,6 +8,7 @@ const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 *
 
 // POST /api/import/excel
 router.post('/excel', upload.single('file'), async (req, res) => {
+  if (!pool) return res.status(503).json({ error: 'Database not configured' });
   if (!req.file) return res.status(400).json({ error: '請上傳檔案' });
   const client = await pool.connect();
   try {

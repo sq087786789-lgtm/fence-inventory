@@ -4,6 +4,7 @@ const pool = require('../db/db');
 
 // GET /api/products
 router.get('/', async (req, res) => {
+  if (!pool) return res.status(503).json({ error: 'Database not configured' });
   try {
     const result = await pool.query(`
       SELECT p.*, c.name as category_name, i.quantity, i.min_quantity
@@ -20,6 +21,7 @@ router.get('/', async (req, res) => {
 
 // GET /api/products/:id
 router.get('/:id', async (req, res) => {
+  if (!pool) return res.status(503).json({ error: 'Database not configured' });
   try {
     const result = await pool.query(`
       SELECT p.*, c.name as category_name, i.quantity, i.min_quantity
@@ -37,6 +39,7 @@ router.get('/:id', async (req, res) => {
 
 // POST /api/products
 router.post('/', async (req, res) => {
+  if (!pool) return res.status(503).json({ error: 'Database not configured' });
   const { sku, name, category_id, unit, price } = req.body;
   const client = await pool.connect();
   try {
@@ -58,6 +61,7 @@ router.post('/', async (req, res) => {
 
 // PUT /api/products/:id
 router.put('/:id', async (req, res) => {
+  if (!pool) return res.status(503).json({ error: 'Database not configured' });
   const { name, category_id, unit, price } = req.body;
   try {
     const result = await pool.query(
@@ -73,6 +77,7 @@ router.put('/:id', async (req, res) => {
 
 // DELETE /api/products/:id
 router.delete('/:id', async (req, res) => {
+  if (!pool) return res.status(503).json({ error: 'Database not configured' });
   try {
     const result = await pool.query(`DELETE FROM products WHERE id=$1 RETURNING id`, [req.params.id]);
     if (result.rows.length === 0) return res.status(404).json({ error: '找不到' });

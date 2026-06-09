@@ -4,6 +4,7 @@ const pool = require('../db/db');
 
 // GET /api/orders
 router.get('/', async (req, res) => {
+  if (!pool) return res.status(503).json({ error: 'Database not configured' });
   try {
     const result = await pool.query(`
       SELECT o.*, u.name as created_by_name
@@ -20,6 +21,7 @@ router.get('/', async (req, res) => {
 
 // GET /api/orders/:id
 router.get('/:id', async (req, res) => {
+  if (!pool) return res.status(503).json({ error: 'Database not configured' });
   try {
     const order = await pool.query(`SELECT * FROM orders WHERE id=$1`, [req.params.id]);
     if (order.rows.length === 0) return res.status(404).json({ error: '找不到訂單' });
@@ -37,6 +39,7 @@ router.get('/:id', async (req, res) => {
 
 // POST /api/orders
 router.post('/', async (req, res) => {
+  if (!pool) return res.status(503).json({ error: 'Database not configured' });
   const { customer_name, notes, items } = req.body;
   const client = await pool.connect();
   try {
@@ -72,6 +75,7 @@ router.post('/', async (req, res) => {
 
 // PUT /api/orders/:id/status
 router.put('/:id/status', async (req, res) => {
+  if (!pool) return res.status(503).json({ error: 'Database not configured' });
   const { status } = req.body;
   try {
     const result = await pool.query(

@@ -4,6 +4,7 @@ const pool = require('../db/db');
 
 // GET /api/purchases
 router.get('/', async (req, res) => {
+  if (!pool) return res.status(503).json({ error: 'Database not configured' });
   try {
     const result = await pool.query(`
       SELECT pr.*, p.name as product_name, p.sku, u.name as created_by_name
@@ -21,6 +22,7 @@ router.get('/', async (req, res) => {
 
 // POST /api/purchases
 router.post('/', async (req, res) => {
+  if (!pool) return res.status(503).json({ error: 'Database not configured' });
   const { product_id, quantity, price, supplier, notes } = req.body;
   const client = await pool.connect();
   try {

@@ -6,6 +6,7 @@ const pool = require('../db/db');
 
 // POST /api/auth/login
 router.post('/login', async (req, res) => {
+  if (!pool) return res.status(503).json({ error: 'Database not configured' });
   const { username, password } = req.body;
   try {
     const result = await pool.query(`SELECT * FROM users WHERE username=$1`, [username]);
@@ -22,6 +23,7 @@ router.post('/login', async (req, res) => {
 
 // POST /api/auth/register
 router.post('/register', async (req, res) => {
+  if (!pool) return res.status(503).json({ error: 'Database not configured' });
   const { username, password, name, role } = req.body;
   try {
     const hash = await bcrypt.hash(password, 10);
