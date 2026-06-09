@@ -16,6 +16,7 @@ const purchaseRoutes = require('./routes/purchases');
 const categoryRoutes = require('./routes/categories');
 const importRoutes = require('./routes/import');
 const initDb = require('./db/init');
+const seedDb = require('./db/seed');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
@@ -28,7 +29,8 @@ app.use('/api/import', importRoutes);
 app.get('/api/init-db', async (req, res) => {
   try {
     await initDb();
-    res.json({ message: 'Database initialized' });
+    await seedDb();
+    res.json({ message: 'Database initialized and seeded' });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

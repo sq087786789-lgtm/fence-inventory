@@ -33,4 +33,4 @@ const seed = async () => {
   }
 };
 
-seed();
+module.exports = seed;
