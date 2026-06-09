@@ -69,18 +69,21 @@ app.get('/', (req, res) => {
 // Admin: deduplicate categories (one-time cleanup)
 app.get('/api/admin/dedupe-categories', async (req, res) => {
   if (!pool) return res.status(503).json({ error: 'Database not configured' });
-  // Hardcoded: 舊的 id 1-4, 新的 id 5-8
-  const idsToDelete = [1, 2, 3, 4];
-  const deleted = [];
-  for (const id of idsToDelete) {
-    try {
-      const r = await pool.query(`DELETE FROM categories WHERE id = $1 RETURNING id, name`, [id]);
-      if (r.rows.length > 0) deleted.push(r.rows[0]);
-    } catch (err) {
-      deleted.push({ id, error: err.message });
-    }
+  try {
+    // 把 products 的 category_id 從舊的 (1-4) 改到新的 (5-8)
+    const updateResult = await pool.query(`
+      UPDATE products SET category_id = category_id + 4
+      WHERE category_id BETWEEN 1 AND 4
+      RETURNING id, category_id
+    `);
+    // 刪掉舊的
+    const deleteResult = await pool.query(`
+      DELETE FROM categories WHERE id BETWEEN 1 AND 4 RETURNING id, name
+    `);
+    res.json({ updatedProducts: updateResult.rows, deleted: deleteResult.rows });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
-  res.json({ deleted });
 });
 
 app.get('/admin', (req, res) => {
