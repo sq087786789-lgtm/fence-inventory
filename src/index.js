@@ -69,30 +69,22 @@ app.get('/', (req, res) => {
 // Admin: deduplicate categories (one-time cleanup)
 app.get('/api/admin/dedupe-categories', async (req, res) => {
   if (!pool) return res.status(503).json({ error: 'Database not configured' });
-  const client = await pool.connect();
   try {
-    // List duplicates
-    const dupes = await client.query(`
-      SELECT name, array_agg(id ORDER BY id) as ids
-      FROM categories
-      GROUP BY name
-      HAVING COUNT(*) > 1
-    `);
-
+    // 先看現況
+    const all = await pool.query(`SELECT id, name FROM categories ORDER BY id`);
+    const byName = {};
     const deleted = [];
-    for (const row of dupes.rows) {
-      // Keep the smallest id, delete the rest
-      const idsToDelete = row.ids.slice(1);
-      for (const id of idsToDelete) {
-        await client.query(`DELETE FROM categories WHERE id = $1`, [id]);
-        deleted.push({ id, name: row.name });
+    for (const row of all.rows) {
+      if (!byName[row.name]) {
+        byName[row.name] = row.id;
+      } else {
+        await pool.query(`DELETE FROM categories WHERE id = $1`, [row.id]);
+        deleted.push({ id: row.id, name: row.name });
       }
     }
-    res.json({ deleted });
+    res.json({ deleted, remaining: Object.keys(byName).length });
   } catch (err) {
     res.status(500).json({ error: err.message });
-  } finally {
-    client.release();
   }
 });
 
