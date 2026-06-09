@@ -70,8 +70,8 @@ app.get('/', (req, res) => {
 app.get('/api/admin/dedupe-categories', async (req, res) => {
   if (!pool) return res.status(503).json({ error: 'Database not configured' });
   try {
-    // 強制 5 秒 timeout
-    await pool.query(`SET statement_timeout = 5000`);
+    // 強制 3 秒 timeout
+    await pool.query(`SET LOCAL statement_timeout = '3s'`);
     const result = await pool.query(`
       WITH deleted AS (
         DELETE FROM categories
@@ -80,8 +80,23 @@ app.get('/api/admin/dedupe-categories', async (req, res) => {
       )
       SELECT * FROM deleted
     `);
-    await pool.query(`SET statement_timeout = 0`);
     res.json({ deleted: result.rows });
+  } catch (err) {
+    res.json({ error: err.message, hint: 'lock detected - try restarting Railway service' });
+  }
+});
+
+// Admin: list table locks (for debugging)
+app.get('/api/admin/locks', async (req, res) => {
+  if (!pool) return res.status(503).json({ error: 'Database not configured' });
+  try {
+    const result = await pool.query(`
+      SELECT pid, usename, application_name, state, query
+      FROM pg_stat_activity
+      WHERE datname = current_database()
+        AND state != 'idle'
+    `);
+    res.json(result.rows);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
