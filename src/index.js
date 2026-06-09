@@ -3,12 +3,20 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 
+process.on('unhandledRejection', (err) => {
+  console.error('UNHANDLED REJECTION:', err);
+});
+process.on('uncaughtException', (err) => {
+  console.error('UNCAUGHT EXCEPTION:', err);
+});
+
 console.log('=== Boot diagnostics ===');
 console.log('NODE_ENV:', process.env.NODE_ENV);
 console.log('PORT:', process.env.PORT);
+console.log('PWD:', process.cwd());
+console.log('process.pid:', process.pid);
 console.log('DATABASE_URL set:', !!process.env.DATABASE_URL);
 if (process.env.DATABASE_URL) {
-  // 遮罩密碼，只印開頭
   const masked = process.env.DATABASE_URL.replace(/:[^:@]+@/, ':***@');
   console.log('DATABASE_URL:', masked);
 }
