@@ -61,6 +61,11 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok', time: new Date().toISOString() });
 });
 
+// Root health check (Railway default healthcheck path)
+app.get('/', (req, res) => {
+  res.json({ status: 'ok', service: 'fence-inventory', time: new Date().toISOString() });
+});
+
 app.get('/admin', (req, res) => {
   res.sendFile(path.join(__dirname, '../public/admin.html'));
 });
