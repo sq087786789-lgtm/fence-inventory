@@ -3,6 +3,18 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 
+console.log('=== Boot diagnostics ===');
+console.log('NODE_ENV:', process.env.NODE_ENV);
+console.log('PORT:', process.env.PORT);
+console.log('DATABASE_URL set:', !!process.env.DATABASE_URL);
+if (process.env.DATABASE_URL) {
+  // 遮罩密碼，只印開頭
+  const masked = process.env.DATABASE_URL.replace(/:[^:@]+@/, ':***@');
+  console.log('DATABASE_URL:', masked);
+}
+console.log('JWT_SECRET set:', !!process.env.JWT_SECRET);
+console.log('========================');
+
 const app = express();
 app.use(cors());
 app.use(express.json());
