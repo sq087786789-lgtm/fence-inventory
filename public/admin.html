@@ -33,10 +33,6 @@ th,td{padding:12px;text-align:left;border-bottom:1px solid #eee;font-size:14px}
 th{background:#f8f9fb;color:#667;font-weight:600}
 tr:hover{background:#f8f9fb}
 .badge{padding:4px 8px;border-radius:6px;font-size:12px;font-weight:600}
-.badge-pending{background:#fff3cd;color:#856404}
-.badge-confirmed{background:#d4edda;color:#155724}
-.badge-shipped{background:#cce5ff;color:#004085}
-.badge-completed{background:#e2e3e5;color:#383d41}
 .low-stock{color:#e74c3c;font-weight:600}
 .hidden{display:none}
 .login-wrap{max-width:400px;margin:100px auto;background:#fff;border-radius:16px;padding:40px;box-shadow:0 4px 20px rgba(0,0,0,.1)}
@@ -50,91 +46,85 @@ tr:hover{background:#f8f9fb}
 <body>
 <div id="alert-box"></div>
 
-<!-- 登入畫面 -->
 <div id="login-view" class="login-wrap">
   <h2>圍籬進銷存</h2>
-  <input type="text" id="username" placeholder="帳號" onkeydown="if(event.key==='Enter')doLogin()">
-  <input type="password" id="password" placeholder="密碼" onkeydown="if(event.key==='Enter')doLogin()">
-  <button class="btn" onclick="doLogin()">登入</button>
+  <input type="text" id="username" placeholder="帳號">
+  <input type="password" id="password" placeholder="密碼">
+  <button class="btn" id="login-btn">登入</button>
 </div>
 
-<!-- 主體 -->
 <div id="main-view" class="hidden">
   <div class="header">
-    <h1>🏗 圍籬進銷存</h1>
+    <h1>圍籬進銷存</h1>
     <div class="header-right">
       <span id="user-info"></span>
-      <button class="logout-btn" onclick="doLogout()">登出</button>
+      <button class="logout-btn" id="logout-btn">登出</button>
     </div>
   </div>
   <div class="container">
     <div class="tabs">
-      <button class="tab active" onclick="showTab('inventory')">📦 庫存</button>
-      <button class="tab" onclick="showTab('products')">🔧 配件</button>
-      <button class="tab" onclick="showTab('orders')">📋 訂單</button>
-      <button class="tab" onclick="showTab('purchases')">🚚 進貨</button>
+      <button class="tab active" data-tab="inventory">庫存</button>
+      <button class="tab" data-tab="products">配件</button>
+      <button class="tab" data-tab="orders">訂單</button>
+      <button class="tab" data-tab="purchases">進貨</button>
     </div>
 
-    <!-- 庫存 Tab -->
     <div id="tab-inventory" class="tab-content">
       <div class="card">
-        <h2>📦 庫存列表</h2>
+        <h2>庫存列表</h2>
         <div id="inventory-list"></div>
       </div>
     </div>
 
-    <!-- 配件 Tab -->
     <div id="tab-products" class="tab-content hidden">
       <div class="card">
-        <h2>🔧 新增配件</h2>
+        <h2>新增配件</h2>
         <div class="form-grid">
           <input type="text" id="p-sku" placeholder="SKU 編號">
           <input type="text" id="p-name" placeholder="配件名稱">
           <select id="p-category"><option value="">選擇分類</option></select>
-          <input type="text" id="p-unit" placeholder="單位（如：支、卷、個）" value="個">
+          <input type="text" id="p-unit" placeholder="單位" value="個">
           <input type="number" id="p-price" placeholder="單價">
         </div>
-        <button class="btn" onclick="addProduct()">新增配件</button>
+        <button class="btn" id="add-product-btn">新增配件</button>
       </div>
       <div class="card">
-        <h2>🔧 配件列表</h2>
+        <h2>配件列表</h2>
         <div id="products-list"></div>
       </div>
     </div>
 
-    <!-- 訂單 Tab -->
     <div id="tab-orders" class="tab-content hidden">
       <div class="card">
-        <h2>📋 新建訂單</h2>
+        <h2>新增訂單</h2>
         <div class="form-grid">
           <input type="text" id="o-customer" placeholder="客戶名稱">
-          <textarea id="o-notes" placeholder="備註" rows="2"></textarea>
+          <select id="o-product"><option value="">選擇配件</option></select>
+          <input type="number" id="o-quantity" placeholder="數量">
+          <input type="number" id="o-price" placeholder="單價">
         </div>
-        <div id="order-items-wrap"></div>
-        <button class="btn btn-sm" onclick="addOrderItem()">+ 加入品項</button><br><br>
-        <button class="btn" onclick="createOrder()">開立訂單</button>
+        <button class="btn" id="add-order-btn">新增訂單</button>
       </div>
       <div class="card">
-        <h2>📋 訂單列表</h2>
+        <h2>訂單列表</h2>
         <div id="orders-list"></div>
       </div>
     </div>
 
-    <!-- 進貨 Tab -->
     <div id="tab-purchases" class="tab-content hidden">
       <div class="card">
-        <h2>🚚 新增進貨（直接入庫）</h2>
+        <h2>新增進貨</h2>
         <div class="form-grid">
           <select id="pu-product"><option value="">選擇配件</option></select>
           <input type="number" id="pu-quantity" placeholder="數量">
-          <input type="number" id="pu-price" placeholder="進貨單價（選填）">
-          <input type="text" id="pu-supplier" placeholder="供應商（選填）">
-          <input type="text" id="pu-notes" placeholder="備註（選填）">
+          <input type="number" id="pu-price" placeholder="單價">
+          <input type="text" id="pu-supplier" placeholder="供應商">
+          <input type="text" id="pu-notes" placeholder="備註">
         </div>
-        <button class="btn" onclick="addPurchase()">確認進貨入庫</button>
+        <button class="btn" id="add-purchase-btn">新增進貨</button>
       </div>
       <div class="card">
-        <h2>🚚 進貨記錄</h2>
+        <h2>進貨列表</h2>
         <div id="purchases-list"></div>
       </div>
     </div>
@@ -142,222 +132,209 @@ tr:hover{background:#f8f9fb}
 </div>
 
 <script>
-const API = '';
-let token = localStorage.getItem('inv_token');
-let user = null;
-let products = [];
-let orderItemCount = 0;
+(function() {
+  var API = '';
+  var token = localStorage.getItem('inv_token');
+  var user = null;
 
-function showAlert(msg) {
-  const el = document.getElementById('alert-box');
-  el.textContent = msg;
-  el.classList.add('show');
-  setTimeout(() => el.classList.remove('show'), 3000);
-}
+  function showAlert(msg) {
+    var el = document.getElementById('alert-box');
+    el.textContent = msg;
+    el.classList.add('show');
+    setTimeout(function() { el.classList.remove('show'); }, 3000);
+  }
 
-function showTab(name) {
-  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-  document.querySelectorAll('.tab-content').forEach(t => t.classList.add('hidden'));
-  document.querySelector(`[onclick="showTab('${name}')"]`).classList.add('active');
-  document.getElementById('tab-' + name).classList.remove('hidden');
-  if (name === 'inventory') loadInventory();
-  if (name === 'products') loadProducts();
-  if (name === 'orders') loadOrders();
-  if (name === 'purchases') loadPurchases();
-}
+  function showTab(name) {
+    document.querySelectorAll('.tab').forEach(function(t) { t.classList.remove('active'); });
+    document.querySelectorAll('.tab-content').forEach(function(t) { t.classList.add('hidden'); });
+    document.querySelector('[data-tab="' + name + '"]').classList.add('active');
+    document.getElementById('tab-' + name).classList.remove('hidden');
+    if (name === 'inventory') loadInventory();
+    if (name === 'products') loadProducts();
+    if (name === 'orders') loadOrders();
+    if (name === 'purchases') loadPurchases();
+  }
 
-async function doLogin() {
-  const res = await fetch(API + '/api/auth/login', {
-    method: 'POST',
-    headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({username: document.getElementById('username').value, password: document.getElementById('password').value})
-  });
-  const data = await res.json();
-  if (!res.ok) return showAlert(data.error);
-  localStorage.setItem('inv_token', data.token);
-  token = data.token;
-  user = data.user;
-  document.getElementById('login-view').classList.add('hidden');
-  document.getElementById('main-view').classList.remove('hidden');
-  document.getElementById('user-info').textContent = user.name || user.username;
-  loadCategories();
-  showTab('inventory');
-}
+  document.querySelector('[data-tab="inventory"]').addEventListener('click', function() { showTab('inventory'); });
+  document.querySelector('[data-tab="products"]').addEventListener('click', function() { showTab('products'); });
+  document.querySelector('[data-tab="orders"]').addEventListener('click', function() { showTab('orders'); });
+  document.querySelector('[data-tab="purchases"]').addEventListener('click', function() { showTab('purchases'); });
 
-function doLogout() {
-  localStorage.remove('item');
-  location.reload();
-}
+  document.getElementById('login-btn').addEventListener('click', doLogin);
+  document.getElementById('logout-btn').addEventListener('click', doLogout);
+  document.getElementById('add-product-btn').addEventListener('click', addProduct);
+  document.getElementById('add-order-btn').addEventListener('click', addOrder);
+  document.getElementById('add-purchase-btn').addEventListener('click', addPurchase);
 
-async function api(url, opts = {}) {
-  const headers = {'Content-Type':'application/json'};
-  if (token) headers['Authorization'] = 'Bearer ' + token;
-  const res = await fetch(API + url, {...opts, headers: {...headers, ...opts.headers}});
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error || 'API錯誤');
-  return data;
-}
-
-async function loadCategories() {
-  try {
-    const cats = await api('/api/categories');
-    const selects = document.querySelectorAll('#p-category, #pu-product');
-    selects.forEach(sel => {
-      const currVal = sel.value;
-      sel.innerHTML = '<option value="">選擇分類</option>';
-      cats.forEach(c => { sel.innerHTML += `<option value="${c.id}">${c.name}</option>`; });
-      sel.value = currVal;
+  async function doLogin() {
+    var u = document.getElementById('username').value;
+    var p = document.getElementById('password').value;
+    if (!u || !p) { showAlert('請填寫帳號密碼'); return; }
+    var res = await fetch(API + '/api/auth/login', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({username: u, password: p})
     });
-  } catch(e) {}
-}
-
-async function loadInventory() {
-  const data = await api('/api/inventory');
-  const low = await api('/api/inventory/low-stock').catch(()=>[]);
-  const lowIds = new Set(low.map(l=>l.id));
-  let html = '<table><tr><th>SKU</th><th>品名</th><th>分類</th><th>庫存</th><th>安全存量</th><th>單位</th><th>單價</th></tr>';
-  data.forEach(p => {
-    const lowClass = lowIds.has(p.id) ? ' low-stock' : '';
-    html += `<tr><td>${p.sku}</td><td>${p.name}</td><td>${p.category_name||'-'}</td><td class="${lowClass}">${p.quantity ?? 0}</td><td>${p.min_quantity??0}</td><td>${p.unit}</td><td>$${p.price}</td></tr>`;
-  });
-  html += '</table>';
-  document.getElementById('inventory-list').innerHTML = data.length ? html : '<p style="color:#999">尚無資料</p>';
-}
-
-async function loadProducts() {
-  products = await api('/api/products');
-  let html = '<table><tr><th>SKU</th><th>名稱</th><th>分類</th><th>單位</th><th>單價</th><th>操作</th></tr>';
-  products.forEach(p => {
-    html += `<tr><td>${p.sku}</td><td>${p.name}</td><td>${p.category_name||'-'}</td><td>${p.unit}</td><td>$${p.price}</td><td><button class="btn btn-danger btn-sm" onclick="delProduct(${p.id})">刪除</button></td></tr>`;
-  });
-  html += '</table>';
-  document.getElementById('products-list').innerHTML = products.length ? html : '<p style="color:#999">尚無資料，請先新增配件</p>';
-}
-
-async function addProduct() {
-  const sku = document.getElementById('p-sku').value.trim();
-  const name = document.getElementById('p-name').value.trim();
-  const category_id = document.getElementById('p-category').value;
-  const unit = document.getElementById('p-unit').value.trim();
-  const price = parseFloat(document.getElementById('p-price').value) || 0;
-  if (!sku || !name) return showAlert('請填寫 SKU 和名稱');
-  try {
-    await api('/api/products', {method:'POST', body: JSON.stringify({sku, name, category_id: category_id||null, unit, price})});
-    showAlert('已新增配件');
-    ['p-sku','p-name','p-unit','p-price'].forEach(id=>document.getElementById(id).value='');
-    loadProducts();
-  } catch(e) { showAlert(e.message); }
-}
-
-async function delProduct(id) {
-  if (!confirm('確定刪除？')) return;
-  try {
-    await api('/api/products/'+id, {method:'DELETE'});
-    showAlert('已刪除');
-    loadProducts();
-  } catch(e) { showAlert(e.message); }
-}
-
-async function loadOrders() {
-  const data = await api('/api/orders');
-  const statusMap = {pending:'待處理',confirmed:'已確認',shipped:'已出貨',completed:'已完成'};
-  let html = '<table><tr><th>單號</th><th>客戶</th><th>金額</th><th>狀態</th><th>日期</th><th>操作</th></tr>';
-  data.forEach(o => {
-    html += `<tr><td>${o.order_no}</td><td>${o.customer_name||'-'}</td><td>$${o.total_amount}</td><td><span class="badge badge-${o.status}">${statusMap[o.status]||o.status}</span></td><td>${new Date(o.created_at).toLocaleDateString()}</td><td><button class="btn btn-sm" onclick="viewOrder(${o.id})">查看</button></td></tr>`;
-  });
-  html += '</table>';
-  document.getElementById('orders-list').innerHTML = data.length ? html : '<p style="color:#999">尚無訂單</p>';
-}
-
-function addOrderItem() {
-  orderItemCount++;
-  const wrap = document.getElementById('order-items-wrap');
-  const div = document.createElement('div');
-  div.id = 'oi-' + orderItemCount;
-  div.style = 'display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:8px;';
-  div.innerHTML = `<select class="oi-product"><option value="">選擇配件</option>${products.map(p=>`<option value="${p.id}" data-price="${p.price}">${p.name} ($${p.price}/${p.unit})</option>`).join('')}</select><input type="number" class="oi-qty" placeholder="數量"><button class="btn btn-danger btn-sm" onclick="removeOrderItem(${orderItemCount})">✕</button>`;
-  wrap.appendChild(div);
-}
-
-function removeOrderItem(id) {
-  document.getElementById('oi-' + id)?.remove();
-}
-
-async function createOrder() {
-  const customer_name = document.getElementById('o-customer').value.trim();
-  const notes = document.getElementById('o-notes').value.trim();
-  const rows = document.querySelectorAll('#order-items-wrap > div');
-  const items = [];
-  for (const row of rows) {
-    const product_id = row.querySelector('.oi-product').value;
-    const quantity = parseFloat(row.querySelector('.oi-qty').value);
-    if (!product_id || !quantity) continue;
-    const price = parseFloat(row.querySelector('.oi-product').selectedOptions[0].dataset.price) || 0;
-    items.push({product_id, quantity, price});
+    var data = await res.json();
+    if (!res.ok) { showAlert(data.error || '登入失敗'); return; }
+    token = data.token;
+    user = data.user;
+    localStorage.setItem('inv_token', token);
+    document.getElementById('login-view').classList.add('hidden');
+    document.getElementById('main-view').classList.remove('hidden');
+    document.getElementById('user-info').textContent = user.name || user.username;
+    loadCategories();
+    showTab('inventory');
   }
-  if (!items.length) return showAlert('請加入至少一個品項');
-  try {
-    await api('/api/orders', {method:'POST', body: JSON.stringify({customer_name, notes, items})});
-    showAlert('訂單已開立，庫存已扣');
-    document.getElementById('order-items-wrap').innerHTML = '';
-    document.getElementById('o-customer').value = '';
-    document.getElementById('o-notes').value = '';
-    loadOrders();
-    loadInventory();
-  } catch(e) { showAlert(e.message); }
-}
 
-async function viewOrder(id) {
-  const o = await api('/api/orders/'+id);
-  let html = `<h3>單號：${o.order_no}</h3><p>客戶：${o.customer_name||'-'} | 金額：$${o.total_amount} | 狀態：${o.status}</p><table><tr><th>品名</th><th>數量</th><th>單價</th><th>小計</th></tr>`;
-  o.items.forEach(i => { html += `<tr><td>${i.name}</td><td>${i.quantity} ${i.unit}</td><td>$${i.price}</td><td>$${i.subtotal}</td></tr>`; });
-  html += '</table>';
-  document.getElementById('orders-list').innerHTML = '<button class="btn btn-sm" onclick="loadOrders()">← 返回列表</button><br><br>' + html;
-}
-
-async function loadPurchases() {
-  const data = await api('/api/purchases');
-  let html = '<table><tr><th>日期</th><th>配件</th><th>數量</th><th>單價</th><th>供應商</th><th>備註</th></tr>';
-  data.forEach(p => {
-    html += `<tr><td>${new Date(p.created_at).toLocaleDateString()}</td><td>${p.product_name}</td><td>${p.quantity}</td><td>${p.price?'$'+p.price:'-'}</td><td>${p.supplier||'-'}</td><td>${p.notes||'-'}</td></tr>`;
-  });
-  html += '</table>';
-  document.getElementById('purchases-list').innerHTML = data.length ? html : '<p style="color:#999">尚無進貨記錄</p>';
-}
-
-async function addPurchase() {
-  const product_id = document.getElementById('pu-product').value;
-  const quantity = parseFloat(document.getElementById('pu-quantity').value);
-  const price = parseFloat(document.getElementById('pu-price').value) || 0;
-  const supplier = document.getElementById('pu-supplier').value.trim();
-  const notes = document.getElementById('pu-notes').value.trim();
-  if (!product_id || !quantity) return showAlert('請選擇配件並填寫數量');
-  try {
-    await api('/api/purchases', {method:'POST', body: JSON.stringify({product_id, quantity, price, supplier, notes})});
-    showAlert('進貨已入庫');
-    ['pu-quantity','pu-price','pu-supplier','pu-notes'].forEach(id=>document.getElementById(id).value='');
-    loadPurchases();
-    loadInventory();
-  } catch(e) { showAlert(e.message); }
-}
-
-// Init
-if (token) {
-  try {
-    const data = await api('/api/auth/login');
-  } catch(e) {
-    token = null;
+  function doLogout() {
+    localStorage.removeItem('inv_token');
+    location.reload();
   }
-}
-if (token) {
-  document.getElementById('login-view').classList.add('hidden');
-  document.getElementById('main-view').classList.remove('hidden');
-  loadCategories();
-  showTab('inventory');
-} else {
-  document.getElementById('login-view').classList.remove('hidden');
-  document.getElementById('main-view').classList.add('hidden');
-}
+
+  async function api(path, opts) {
+    opts = opts || {};
+    var headers = {'Content-Type':'application/json'};
+    if (token) headers['Authorization'] = 'Bearer ' + token;
+    var res = await fetch(API + path, {method: opts.method || 'GET', headers: headers, body: opts.body});
+    var data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'API錯誤');
+    return data;
+  }
+
+  async function loadCategories() {
+    try {
+      var data = await api('/api/categories');
+      var html = '<option value="">選擇分類</option>';
+      data.forEach(function(c) { html += '<option value="' + c.id + '">' + c.name + '</option>'; });
+      document.getElementById('p-category').innerHTML = html;
+    } catch(e) { showAlert(e.message); }
+  }
+
+  async function loadInventory() {
+    try {
+      var data = await api('/api/inventory');
+      if (!data.length) {
+        document.getElementById('inventory-list').innerHTML = '<p style="color:#999">尚無庫存資料</p>';
+        return;
+      }
+      var html = '<table><tr><th>SKU</th><th>名稱</th><th>分類</th><th>庫存</th><th>單位</th><th>單價</th><th>狀態</th></tr>';
+      data.forEach(function(item) {
+        var low = parseFloat(item.quantity) <= parseFloat(item.min_quantity);
+        html += '<tr><td>' + (item.sku||'') + '</td><td>' + (item.name||'') + '</td><td>' + (item.category_name||'') + '</td><td class="' + (low?'low-stock':'') + '">' + item.quantity + '</td><td>' + (item.unit||'') + '</td><td>$' + (item.price||0) + '</td><td>' + (low?'低庫存':'正常') + '</td></tr>';
+      });
+      html += '</table>';
+      document.getElementById('inventory-list').innerHTML = html;
+    } catch(e) { showAlert(e.message); }
+  }
+
+  async function loadProducts() {
+    try {
+      var data = await api('/api/products');
+      if (!data.length) {
+        document.getElementById('products-list').innerHTML = '<p style="color:#999">尚無配件資料</p>';
+        return;
+      }
+      var html = '<table><tr><th>SKU</th><th>名稱</th><th>分類</th><th>單位</th><th>單價</th></tr>';
+      data.forEach(function(p) {
+        html += '<tr><td>' + (p.sku||'') + '</td><td>' + (p.name||'') + '</td><td>' + (p.category_name||'') + '</td><td>' + (p.unit||'') + '</td><td>$' + (p.price||0) + '</td></tr>';
+      });
+      html += '</table>';
+      document.getElementById('products-list').innerHTML = html;
+    } catch(e) { showAlert(e.message); }
+  }
+
+  async function loadOrders() {
+    try {
+      var data = await api('/api/orders');
+      if (!data.length) {
+        document.getElementById('orders-list').innerHTML = '<p style="color:#999">尚無訂單</p>';
+        return;
+      }
+      var html = '<table><tr><th>單號</th><th>客戶</th><th>日期</th><th>金額</th><th>狀態</th></tr>';
+      data.forEach(function(o) {
+        html += '<tr><td>' + (o.order_no||'') + '</td><td>' + (o.customer_name||'') + '</td><td>' + new Date(o.created_at).toLocaleDateString() + '</td><td>$' + (o.total_amount||0) + '</td><td>' + (o.status||'') + '</td></tr>';
+      });
+      html += '</table>';
+      document.getElementById('orders-list').innerHTML = html;
+    } catch(e) { showAlert(e.message); }
+  }
+
+  async function loadPurchases() {
+    try {
+      var data = await api('/api/purchases');
+      if (!data.length) {
+        document.getElementById('purchases-list').innerHTML = '<p style="color:#999">尚無進貨記錄</p>';
+        return;
+      }
+      var html = '<table><tr><th>日期</th><th>配件</th><th>數量</th><th>單價</th><th>供應商</th></tr>';
+      data.forEach(function(p) {
+        html += '<tr><td>' + new Date(p.created_at).toLocaleDateString() + '</td><td>' + (p.product_name||'') + '</td><td>' + p.quantity + '</td><td>' + (p.price?'$'+p.price:'-') + '</td><td>' + (p.supplier||'-') + '</td></tr>';
+      });
+      html += '</table>';
+      document.getElementById('purchases-list').innerHTML = html;
+    } catch(e) { showAlert(e.message); }
+  }
+
+  async function addProduct() {
+    var sku = document.getElementById('p-sku').value.trim();
+    var name = document.getElementById('p-name').value.trim();
+    var category_id = document.getElementById('p-category').value;
+    var unit = document.getElementById('p-unit').value.trim();
+    var price = parseFloat(document.getElementById('p-price').value) || 0;
+    if (!sku || !name) { showAlert('請填寫 SKU 和名稱'); return; }
+    try {
+      await api('/api/products', {method:'POST', body: JSON.stringify({sku: sku, name: name, category_id: category_id||null, unit: unit, price: price})});
+      showAlert('配件已新增');
+      ['p-sku','p-name','p-unit','p-price'].forEach(function(id) { document.getElementById(id).value = ''; });
+      document.getElementById('p-category').value = '';
+      loadProducts();
+    } catch(e) { showAlert(e.message); }
+  }
+
+  async function addOrder() {
+    var product_id = document.getElementById('o-product').value;
+    var quantity = parseFloat(document.getElementById('o-quantity').value);
+    var price = parseFloat(document.getElementById('o-price').value) || 0;
+    var customer_name = document.getElementById('o-customer').value.trim();
+    if (!product_id || !quantity) { showAlert('請選擇配件並填寫數量'); return; }
+    try {
+      await api('/api/orders', {method:'POST', body: JSON.stringify({customer_name: customer_name, items: [{product_id: product_id, quantity: quantity, price: price}]})});
+      showAlert('訂單已建立');
+      ['o-customer','o-quantity','o-price'].forEach(function(id) { document.getElementById(id).value = ''; });
+      document.getElementById('o-product').value = '';
+      loadOrders();
+      loadInventory();
+    } catch(e) { showAlert(e.message); }
+  }
+
+  async function addPurchase() {
+    var product_id = document.getElementById('pu-product').value;
+    var quantity = parseFloat(document.getElementById('pu-quantity').value);
+    var price = parseFloat(document.getElementById('pu-price').value) || 0;
+    var supplier = document.getElementById('pu-supplier').value.trim();
+    var notes = document.getElementById('pu-notes').value.trim();
+    if (!product_id || !quantity) { showAlert('請選擇配件並填寫數量'); return; }
+    try {
+      await api('/api/purchases', {method:'POST', body: JSON.stringify({product_id: product_id, quantity: quantity, price: price, supplier: supplier, notes: notes})});
+      showAlert('進貨已入庫');
+      ['pu-quantity','pu-price','pu-supplier','pu-notes'].forEach(function(id) { document.getElementById(id).value = ''; });
+      loadPurchases();
+      loadInventory();
+    } catch(e) { showAlert(e.message); }
+  }
+
+  // Init
+  if (token) {
+    document.getElementById('login-view').classList.add('hidden');
+    document.getElementById('main-view').classList.remove('hidden');
+    loadCategories();
+    showTab('inventory');
+  } else {
+    document.getElementById('login-view').classList.remove('hidden');
+    document.getElementById('main-view').classList.add('hidden');
+  }
+})();
 </script>
 </body>
 </html>
