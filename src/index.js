@@ -68,24 +68,7 @@ app.get('/', (req, res) => {
 
 // Admin: deduplicate categories (one-time cleanup)
 app.get('/api/admin/dedupe-categories', async (req, res) => {
-  if (!pool) return res.status(503).json({ error: 'Database not configured' });
-  try {
-    // 先看現況
-    const all = await pool.query(`SELECT id, name FROM categories ORDER BY id`);
-    const byName = {};
-    const deleted = [];
-    for (const row of all.rows) {
-      if (!byName[row.name]) {
-        byName[row.name] = row.id;
-      } else {
-        await pool.query(`DELETE FROM categories WHERE id = $1`, [row.id]);
-        deleted.push({ id: row.id, name: row.name });
-      }
-    }
-    res.json({ deleted, remaining: Object.keys(byName).length });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+  res.json({ status: 'endpoint reached', version: 'v3' });
 });
 
 app.get('/admin', (req, res) => {
