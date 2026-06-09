@@ -70,17 +70,18 @@ app.get('/', (req, res) => {
 app.get('/api/admin/dedupe-categories', async (req, res) => {
   if (!pool) return res.status(503).json({ error: 'Database not configured' });
   try {
-    // 把 products 的 category_id 從舊的 (1-4) 改到新的 (5-8)
-    const updateResult = await pool.query(`
-      UPDATE products SET category_id = category_id + 4
-      WHERE category_id BETWEEN 1 AND 4
-      RETURNING id, category_id
+    // 強制 5 秒 timeout
+    await pool.query(`SET statement_timeout = 5000`);
+    const result = await pool.query(`
+      WITH deleted AS (
+        DELETE FROM categories
+        WHERE id IN (1, 2, 3, 4)
+        RETURNING id, name
+      )
+      SELECT * FROM deleted
     `);
-    // 刪掉舊的
-    const deleteResult = await pool.query(`
-      DELETE FROM categories WHERE id BETWEEN 1 AND 4 RETURNING id, name
-    `);
-    res.json({ updatedProducts: updateResult.rows, deleted: deleteResult.rows });
+    await pool.query(`SET statement_timeout = 0`);
+    res.json({ deleted: result.rows });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
