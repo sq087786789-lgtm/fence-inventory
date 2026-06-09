@@ -48,6 +48,11 @@ app.get('/api/init-db', async (req, res) => {
   }
 });
 
+// Health check for Railway
+app.get('/health', (req, res) => {
+  res.json({ status: 'ok', time: new Date().toISOString() });
+});
+
 app.get('/admin', (req, res) => {
   res.sendFile(path.join(__dirname, '../public/admin.html'));
 });
