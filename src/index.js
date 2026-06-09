@@ -66,6 +66,26 @@ app.get('/', (req, res) => {
   res.json({ status: 'ok', service: 'fence-inventory', time: new Date().toISOString() });
 });
 
+// Admin: deduplicate categories (one-time cleanup)
+app.get('/api/admin/dedupe-categories', async (req, res) => {
+  if (!pool) return res.status(503).json({ error: 'Database not configured' });
+  try {
+    const result = await pool.query(`
+      DELETE FROM categories
+      WHERE id IN (
+        SELECT id FROM categories
+        WHERE id NOT IN (
+          SELECT MIN(id) FROM categories GROUP BY name
+        )
+      )
+      RETURNING id, name
+    `);
+    res.json({ deleted: result.rows });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.get('/admin', (req, res) => {
   res.sendFile(path.join(__dirname, '../public/admin.html'));
 });
