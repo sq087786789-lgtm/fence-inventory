@@ -29,7 +29,6 @@ const seed = async () => {
     console.error('Seed錯誤:', err.message);
   } finally {
     client.release();
-    await pool.end();
   }
 };
 
