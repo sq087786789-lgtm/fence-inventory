@@ -69,18 +69,23 @@ app.get('/', (req, res) => {
 // Admin: deduplicate categories (one-time cleanup)
 app.get('/api/admin/dedupe-categories', async (req, res) => {
   if (!pool) return res.status(503).json({ error: 'Database not configured' });
+  const client = await pool.connect();
   try {
-    const result = await pool.query(`
-      WITH deleted AS (
-        DELETE FROM categories
-        WHERE id IN (1, 2, 3, 4)
-        RETURNING id, name
-      )
-      SELECT * FROM deleted
+    await client.query('BEGIN');
+    await client.query(`SET LOCAL statement_timeout = '5s'`);
+    await client.query(`SET LOCAL lock_timeout = '5s'`);
+    // 先解除 FK 引用
+    await client.query(`UPDATE products SET category_id = NULL WHERE category_id IN (1,2,3,4)`);
+    const result = await client.query(`
+      DELETE FROM categories WHERE id IN (1, 2, 3, 4) RETURNING id, name
     `);
+    await client.query('COMMIT');
     res.json({ deleted: result.rows });
   } catch (err) {
-    res.json({ error: err.message });
+    await client.query('ROLLBACK').catch(() => {});
+    res.json({ error: err.message, code: err.code });
+  } finally {
+    client.release();
   }
 });
 
