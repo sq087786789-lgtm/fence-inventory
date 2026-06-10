@@ -9,7 +9,6 @@ process.on('unhandledRejection', (err) => {
 process.on('uncaughtException', (err) => {
   console.error('UNCAUGHT EXCEPTION:', err);
 });
-
 console.log('=== Boot diagnostics ===');
 console.log('NODE_ENV:', process.env.NODE_ENV);
 console.log('PORT:', process.env.PORT);
@@ -37,6 +36,7 @@ const categoryRoutes = require('./routes/categories');
 const importRoutes = require('./routes/import');
 const initDb = require('./db/init');
 const seedDb = require('./db/seed');
+const pool = require('./db/db');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
@@ -70,8 +70,6 @@ app.get('/', (req, res) => {
 app.get('/api/admin/dedupe-categories', async (req, res) => {
   if (!pool) return res.status(503).json({ error: 'Database not configured' });
   try {
-    // 強制 3 秒 timeout
-    await pool.query(`SET LOCAL statement_timeout = '3s'`);
     const result = await pool.query(`
       WITH deleted AS (
         DELETE FROM categories
@@ -82,19 +80,20 @@ app.get('/api/admin/dedupe-categories', async (req, res) => {
     `);
     res.json({ deleted: result.rows });
   } catch (err) {
-    res.json({ error: err.message, hint: 'lock detected - try restarting Railway service' });
+    res.json({ error: err.message });
   }
 });
 
-// Admin: list table locks (for debugging)
+// Admin: list active queries (for debugging locks)
 app.get('/api/admin/locks', async (req, res) => {
   if (!pool) return res.status(503).json({ error: 'Database not configured' });
   try {
     const result = await pool.query(`
-      SELECT pid, usename, application_name, state, query
+      SELECT pid, usename, state, left(query, 100) as query
       FROM pg_stat_activity
       WHERE datname = current_database()
         AND state != 'idle'
+        AND pid != pg_backend_pid()
     `);
     res.json(result.rows);
   } catch (err) {
