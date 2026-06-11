@@ -61,9 +61,9 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok', time: new Date().toISOString() });
 });
 
-// Root health check (Railway default healthcheck path)
+// Root: redirect to admin UI (Railway healthcheck is on /health)
 app.get('/', (req, res) => {
-  res.json({ status: 'ok', service: 'fence-inventory', time: new Date().toISOString() });
+  res.redirect(302, '/admin');
 });
 
 // Admin: deduplicate categories (one-time cleanup)
