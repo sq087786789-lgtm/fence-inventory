@@ -23,6 +23,8 @@ test('health does not claim database readiness; login page available',async()=>{
   assert.equal((await request('/ready')).status,503);
   assert.equal((await request('/api/products',{headers:{Authorization:'Bearer '+token('admin')}})).status,503);
   const page=await request('/admin');assert.equal(page.status,200);assert.match(await page.text(),/下載資料備份/);
+  const root=await request('/',{redirect:'manual'});assert.equal(root.headers.get('location'),'/tools.html');
+  assert.match(await (await request('/tools.html')).text(),/上慶工具入口/);
 });
 test('repeated deploy preserves existing administrator password',async()=>{
   const dbPath=require.resolve('../src/db/db');const calls=[];
