@@ -1,5 +1,9 @@
 # 圍籬進銷存系統
 
+正式網站：[上慶工具入口](https://hongsing-inventory.onrender.com/) · [進銷存登入](https://hongsing-inventory.onrender.com/admin)。帳號為 `admin`，密碼使用管理者部署時自行設定的登入密碼。免費主機閒置後會休眠，首次開啟可能需等待約一分鐘。
+
+2026-10-13 已以 Render Free＋Supabase Free 上線。新系統從空白庫存與訂單開始，舊 Railway 保留；GitHub main 更新會自動部署，資料儲存在 Supabase。管理員可在登入後下載業務資料 JSON 備份，請保存於私人位置。
+
 免費部署方式：請讀 [FREE_DEPLOY.md](FREE_DEPLOY.md)。使用 Render Free 與 Supabase Free；先建立空白系統，舊 Railway 保留。
 
 
