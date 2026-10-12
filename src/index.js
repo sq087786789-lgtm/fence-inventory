@@ -1,117 +1,52 @@
 require('dotenv').config();
 const express = require('express');
-const cors = require('cors');
-const path = require('path');
-
-process.on('unhandledRejection', (err) => {
-  console.error('UNHANDLED REJECTION:', err);
-});
-process.on('uncaughtException', (err) => {
-  console.error('UNCAUGHT EXCEPTION:', err);
-});
-console.log('=== Boot diagnostics ===');
-console.log('NODE_ENV:', process.env.NODE_ENV);
-console.log('PORT:', process.env.PORT);
-console.log('PWD:', process.cwd());
-console.log('process.pid:', process.pid);
-console.log('DATABASE_URL set:', !!process.env.DATABASE_URL);
-if (process.env.DATABASE_URL) {
-  const masked = process.env.DATABASE_URL.replace(/:[^:@]+@/, ':***@');
-  console.log('DATABASE_URL:', masked);
-}
-console.log('JWT_SECRET set:', !!process.env.JWT_SECRET);
-console.log('========================');
-
-const app = express();
-app.use(cors());
-app.use(express.json());
-app.use(express.static(path.join(__dirname, '../public')));
-
-const authRoutes = require('./routes/auth');
-const productRoutes = require('./routes/products');
-const inventoryRoutes = require('./routes/inventory');
-const orderRoutes = require('./routes/orders');
-const purchaseRoutes = require('./routes/purchases');
-const categoryRoutes = require('./routes/categories');
-const importRoutes = require('./routes/import');
-const initDb = require('./db/init');
-const seedDb = require('./db/seed');
+const path = require('node:path');
+const auth = require('./middleware/auth');
 const pool = require('./db/db');
-
-app.use('/api/auth', authRoutes);
-app.use('/api/products', productRoutes);
-app.use('/api/inventory', inventoryRoutes);
-app.use('/api/orders', orderRoutes);
-app.use('/api/purchases', purchaseRoutes);
-app.use('/api/categories', categoryRoutes);
-app.use('/api/import', importRoutes);
-
-app.get('/api/init-db', async (req, res) => {
+const app = express();
+app.disable('x-powered-by');
+app.use(express.json({ limit: '1mb' }));
+app.use(express.static(path.join(__dirname, '../public')));
+app.use('/api/auth', require('./routes/auth'));
+for (const name of ['products','inventory','orders','purchases','categories','import']) app.use('/api/' + name, auth, require('./routes/' + name));
+for (const name of ['/api/init-db','/api/admin/dedupe-categories','/api/admin/locks']) app.all(name,(req,res)=>res.status(404).json({error:'維護接口已停用'}));
+app.get('/health', (req,res) => res.json({status:'ok'}));
+app.get('/ready', async (req,res) => {
+  if (!pool) return res.status(503).json({error:'資料庫尚未設定'});
+  try { await pool.query('SELECT 1'); res.json({status:'ready'}); }
+  catch { res.status(503).json({error:'資料庫尚未就緒，請稍後再試'}); }
+});
+app.get('/api/backup', auth, async (req,res) => {
+  if (req.user.role !== 'admin') return res.status(403).json({error:'需要管理員權限'});
+  if (!pool) return res.status(503).json({error:'資料庫尚未設定'});
+  let client;
   try {
-    await initDb();
-    await seedDb();
-    res.json({ message: 'Database initialized and seeded' });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// Health check for Railway
-app.get('/health', (req, res) => {
-  res.json({ status: 'ok', time: new Date().toISOString() });
-});
-
-// Root: redirect to admin UI (Railway healthcheck is on /health)
-app.get('/', (req, res) => {
-  res.redirect(302, '/admin');
-});
-
-// Admin: deduplicate categories (one-time cleanup)
-app.get('/api/admin/dedupe-categories', async (req, res) => {
-  if (!pool) return res.status(503).json({ error: 'Database not configured' });
-  const client = await pool.connect();
-  try {
-    await client.query('BEGIN');
-    await client.query(`SET LOCAL statement_timeout = '5s'`);
-    await client.query(`SET LOCAL lock_timeout = '5s'`);
-    // 先解除 FK 引用
-    await client.query(`UPDATE products SET category_id = NULL WHERE category_id IN (1,2,3,4)`);
-    const result = await client.query(`
-      DELETE FROM categories WHERE id IN (1, 2, 3, 4) RETURNING id, name
-    `);
+    client = await pool.connect();
+    await client.query('BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY');
+    const tables = {};
+    for (const name of ['categories','products','inventory','orders','order_items','purchase_records']) tables[name] = (await client.query('SELECT * FROM ' + name + ' ORDER BY id')).rows;
     await client.query('COMMIT');
-    res.json({ deleted: result.rows });
+    res.set('Content-Disposition','attachment; filename="inventory-backup.json"');
+    res.json({format:'hongsing-inventory-backup',version:1,exportedAt:new Date().toISOString(),tables});
   } catch (err) {
-    await client.query('ROLLBACK').catch(() => {});
-    res.json({ error: err.message, code: err.code });
-  } finally {
-    client.release();
+    if (client) await client.query('ROLLBACK').catch(()=>{});
+    console.error('Backup failed:',err.message);
+    res.status(500).json({error:'備份失敗，請稍後再試'});
+  } finally { if (client) client.release(); }
+});
+app.get('/', (req,res) => res.redirect('/admin'));
+app.get('/admin', (req,res) => res.sendFile(path.join(__dirname,'../public/admin.html')));
+async function start() {
+  if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32) throw new Error('請設定至少 32 字元的 JWT_SECRET');
+  if (!pool) throw new Error('請設定 DATABASE_URL');
+  if (process.env.AUTO_INIT_DB === 'true') {
+    await require('./db/init')();
+    await require('./db/seed')();
   }
-});
-
-// Admin: list active queries (for debugging locks)
-app.get('/api/admin/locks', async (req, res) => {
-  if (!pool) return res.status(503).json({ error: 'Database not configured' });
-  try {
-    const result = await pool.query(`
-      SELECT pid, usename, state, left(query, 100) as query
-      FROM pg_stat_activity
-      WHERE datname = current_database()
-        AND state != 'idle'
-        AND pid != pg_backend_pid()
-    `);
-    res.json(result.rows);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-app.get('/admin', (req, res) => {
-  res.sendFile(path.join(__dirname, '../public/admin.html'));
-});
-
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`✓ 進銷存系統已啟動 http://0.0.0.0:${PORT}`);
-  console.log(`  管理後台 http://0.0.0.0:${PORT}/admin`);
-});
+  await pool.query('SELECT 1');
+  const server = app.listen(process.env.PORT || 3000,'0.0.0.0',()=>console.log('Inventory service ready'));
+  process.on('SIGTERM',()=>server.close(()=>pool.end().finally(()=>process.exit(0))));
+  return server;
+}
+if (require.main === module) start().catch(err=>{console.error('Startup failed:',err.message);process.exitCode=1; if(pool)pool.end();});
+module.exports = {app,start};
