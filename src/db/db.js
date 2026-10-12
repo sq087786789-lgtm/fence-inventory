@@ -6,7 +6,7 @@ const schema = process.env.DB_SCHEMA || 'public';
 if (!/^[a-z_][a-z0-9_]*$/.test(schema)) throw new Error('DB_SCHEMA 格式不正確');
 if (process.env.DATABASE_URL) {
   pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
+    connectionString: require('./connection')(),
     options: '-c search_path=' + schema,
     ssl: { rejectUnauthorized: false },
     max: 5,
