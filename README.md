@@ -1,5 +1,8 @@
 # 圍籬進銷存系統
 
+免費部署方式：請讀 [FREE_DEPLOY.md](FREE_DEPLOY.md)。使用 Render Free 與 Supabase Free；先建立空白系統，舊 Railway 保留。
+
+
 ## 功能
 
 - 📦 **庫存管理** - 即時庫存查詢、低庫存警示
@@ -46,7 +49,7 @@ npm start
 # 開啟 http://localhost:3000/admin
 ```
 
-**預設帳號：** `admin` / `admin123`
+**管理員帳號：** `admin`；首次部署密碼由 `ADMIN_PASSWORD` 設定，沒有固定公開密碼。
 
 ---
 
