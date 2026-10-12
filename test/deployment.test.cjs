@@ -7,6 +7,16 @@ test.before(async()=>{server=app.listen(0,'127.0.0.1');await new Promise(r=>serv
 test.after(()=>new Promise(r=>server.close(r)));
 const request=(p,opts={})=>fetch(base+p,opts);
 const token=role=>jwt.sign({id:1,role},process.env.JWT_SECRET);
+test('separate database password preserves special symbols and old connection format',()=>{
+  const build=require('../src/db/connection');
+  for(const password of ['synthetic:pass@word/#?%', 'synthetic 中文密碼']) {
+    const url=new URL(build({DATABASE_URL:'postgresql://test@example.invalid:5432/postgres',DATABASE_PASSWORD:password}));
+    assert.equal(decodeURIComponent(url.password),password);
+    assert.equal(url.hostname,'example.invalid');
+  }
+  assert.equal(new URL(build({DATABASE_URL:'postgresql://test:synthetic@example.invalid:5432/postgres'})).password,'synthetic');
+  assert.throws(()=>build({DATABASE_URL:'postgresql://test@example.invalid/postgres'}),/DATABASE_PASSWORD/);
+});
 test('all business APIs reject unauthenticated access before database access',async()=>{
   for(const p of ['products','inventory','orders','purchases','categories','import/excel','backup']) assert.equal((await request('/api/'+p)).status,401,p);
   assert.equal((await request('/api/auth/register',{method:'POST',headers:{'Content-Type':'application/json'},body:'{"username":"attacker","role":"admin"}'})).status,401);
