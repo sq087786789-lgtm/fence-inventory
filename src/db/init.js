@@ -4,6 +4,9 @@ const pool = require('./db');
 const initDB = async () => {
   const client = await pool.connect();
   try {
+    const schema = process.env.DB_SCHEMA || 'public';
+    if (!/^[a-z_][a-z0-9_]*$/.test(schema)) throw new Error('DB_SCHEMA 格式不正確');
+    await client.query('CREATE SCHEMA IF NOT EXISTS "' + schema + '"');
     await client.query(`
       CREATE TABLE IF NOT EXISTS categories (
         id SERIAL PRIMARY KEY,
