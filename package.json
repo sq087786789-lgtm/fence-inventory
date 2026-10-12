@@ -6,8 +6,9 @@
   "scripts": {
     "start": "node src/index.js",
     "dev": "nodemon src/index.js",
-    "db:init": "node src/db/init.js",
-    "db:seed": "node src/db/seed.js"
+    "db:init": "node scripts/setup-db.cjs",
+    "db:seed": "node scripts/setup-db.cjs",
+    "test": "node --test test/*.test.cjs"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
@@ -21,5 +22,8 @@
   },
   "devDependencies": {
     "nodemon": "^3.1.4"
+  },
+  "engines": {
+    "node": ">=22"
   }
 }
