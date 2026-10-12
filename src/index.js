@@ -34,7 +34,7 @@ app.get('/api/backup', auth, async (req,res) => {
     res.status(500).json({error:'備份失敗，請稍後再試'});
   } finally { if (client) client.release(); }
 });
-app.get('/', (req,res) => res.redirect('/admin'));
+app.get('/', (req,res) => res.redirect('/tools.html'));
 app.get('/admin', (req,res) => res.sendFile(path.join(__dirname,'../public/admin.html')));
 async function start() {
   if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32) throw new Error('請設定至少 32 字元的 JWT_SECRET');
