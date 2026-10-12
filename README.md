@@ -152,3 +152,9 @@ await fetch('https://your-api.railway.app/api/orders', {
   body: JSON.stringify({ customer_name: '客戶', items: [...] })
 });
 ```
+
+## 中文使用與部署說明
+
+管理介面提供商品、庫存、採購及訂單管理，登入後使用。資料由 Node.js 後端與 PostgreSQL 資料庫儲存，需要部署服務並設定環境變數；不能只把靜態 HTML 放到 GitHub Pages 就完成部署。`public/admin.html` 已附中文操作說明。此儲存庫目前未啟用 GitHub Pages，範例網域不代表正式服務網址。
+
+AI 接續請讀取 README.md、src/index.js、src/routes 與 src/db 的原始程式；不要將 .env、帳密或實際交易資料加入公開儲存庫。
