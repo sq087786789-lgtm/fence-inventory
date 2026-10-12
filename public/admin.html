@@ -43,7 +43,7 @@ tr:hover{background:#f8f9fb}
 #alert-box.show{opacity:1}
 </style>
 </head>
-<body>
+<body><details class="chinese-guide" style="margin:12px auto;padding:12px 16px;max-width:1100px;background:#fff;border:1px solid #dce5df;border-radius:10px;color:#213b36;font:15px/1.8 system-ui,'Microsoft JhengHei',sans-serif"><summary style="cursor:pointer;font-weight:700">中文功能與操作說明｜圍籬進銷存</summary><div style="padding-top:10px"><p>登入後可管理商品、庫存、採購與訂單，查詢低庫存提示，並由後端 API 提供資料。先建立商品與庫存，再依實際交易登錄採購或訂單，確認數量與結果。</p><p>資料由後端與 PostgreSQL 資料庫管理，需要部署伺服器、設定環境變數與帳號。GitHub Pages 只能提供靜態頁面，無法獨立運行本系統。</p><p><a href="https://github.com/sq087786789-lgtm/fence-inventory">查看 GitHub 原始程式</a>；AI 接續請先讀 README.md、src/index.js 及資料庫與路由程式。帳密、環境變數和實際交易資料需由管理者另行提供。</p></div></details>
 <div id="alert-box"></div>
 
 <div id="login-view" class="login-wrap">
