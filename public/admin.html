@@ -48,6 +48,7 @@ tr:hover{background:#f8f9fb}
 
 <div id="login-view" class="login-wrap">
   <h2>圍籬進銷存</h2>
+  <p style="font-size:13px;line-height:1.7;color:#667;margin-bottom:16px">請用管理者設定的帳號密碼登入。免費主機閒置後會休眠，首次開啟請稍候。</p>
   <input type="text" id="username" placeholder="帳號">
   <input type="password" id="password" placeholder="密碼">
   <button class="btn" id="login-btn">登入</button>
@@ -59,6 +60,7 @@ tr:hover{background:#f8f9fb}
     <div class="header-right">
       <span id="user-info"></span>
       <button class="logout-btn" id="logout-btn">登出</button>
+      <button class="logout-btn" id="backup-btn">下載資料備份</button>
     </div>
   </div>
   <div class="container">
@@ -162,6 +164,15 @@ tr:hover{background:#f8f9fb}
 
   document.getElementById('login-btn').addEventListener('click', doLogin);
   document.getElementById('logout-btn').addEventListener('click', doLogout);
+  document.getElementById('backup-btn').addEventListener('click', async function() {
+    try {
+      var data = await api('/api/backup');
+      var url = URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}));
+      var a = document.createElement('a');
+      a.href = url; a.download = '進銷存備份-' + new Date().toISOString().slice(0,10) + '.json';
+      a.click(); setTimeout(function(){URL.revokeObjectURL(url);},1000);
+    } catch(e) { showAlert(e.message); }
+  });
   document.getElementById('add-product-btn').addEventListener('click', addProduct);
   document.getElementById('add-order-btn').addEventListener('click', addOrder);
   document.getElementById('add-purchase-btn').addEventListener('click', addPurchase);
