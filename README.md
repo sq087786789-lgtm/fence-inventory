@@ -1,5 +1,7 @@
 # 圍籬進銷存系統
 
+工具入口與部署接續事項請先看 [HANDOFF.md](HANDOFF.md)。[GitHub 統一工具入口](https://sq087786789-lgtm.github.io/shangching-fence-survey/tools.html) 的唯一清單維護在 shangching-fence-survey 專案的 tools.json；本專案 public/tools.html 只轉址，不另存工具清單。工作室固定連到該專案的 studio.html，不要改回舊 hongsing-fence-planner。進銷存的 /admin 保持原址。
+
 正式網站：[上慶工具入口](https://hongsing-inventory.onrender.com/) · [進銷存登入](https://hongsing-inventory.onrender.com/admin)。帳號為 `admin`，密碼使用管理者部署時自行設定的登入密碼。免費主機閒置後會休眠，首次開啟可能需等待約一分鐘。
 
 2026-10-13 已以 Render Free＋Supabase Free 上線。新系統從空白庫存與訂單開始，舊 Railway 保留；GitHub main 更新會自動部署，資料儲存在 Supabase。管理員可在登入後下載業務資料 JSON 備份，請保存於私人位置。
